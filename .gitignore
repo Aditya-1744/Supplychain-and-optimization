@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+.venv/
+.env
+# Generated data artifacts (regenerate with scripts/generate_data.py)
+data/raw/*.csv
+data/raw/*.png
+data/raw/*.json
+data/processed/*
+.pytest_cache/
+.ipynb_checkpoints/

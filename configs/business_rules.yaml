@@ -1,0 +1,65 @@
+network:
+  echelons:
+  - factory
+  - dc
+  - store
+  factory:
+    id: F1
+    name: Central Factory
+  dc:
+    id: DC1
+    name: Regional DC
+    capacity_units: 60000
+  stores:
+  - id: WH_1
+    name: Kaggle WH_1
+    size_multiplier: 1.002475984697092
+    capacity_units: 15000
+  - id: WH_2
+    name: Kaggle WH_2
+    size_multiplier: 1.000224592741228
+    capacity_units: 15000
+  - id: WH_3
+    name: Kaggle WH_3
+    size_multiplier: 1.0003120254385431
+    capacity_units: 15000
+  - id: WH_4
+    name: Kaggle WH_4
+    size_multiplier: 0.9993967143885257
+    capacity_units: 15000
+  - id: WH_5
+    name: Kaggle WH_5
+    size_multiplier: 0.9975906827346106
+    capacity_units: 15000
+skus:
+  n_skus: 50
+  abc_cutpoints:
+    A: 0.8
+    B: 0.95
+    C: 1.0
+  xyz_cutpoints:
+    X: 0.5
+    Y: 1.0
+    Z: null
+service_floors:
+  A: 0.98
+  B: 0.95
+  C: 0.9
+costs:
+  holding_rate_annual: 0.25
+  ordering_cost: 75.0
+  shortage_penalty_per_unit: 12.0
+  shortage_penalty_scenarios:
+    low: 6.0
+    moderate: 12.0
+    high: 24.0
+constraints:
+  inventory_budget_cap: 750000
+  honor_warehouse_capacity: true
+  min_order_qty: 10
+  pack_size: 5
+assumptions:
+  deterministic_lead_times: true
+  lead_time_days:
+    factory_to_dc: 7
+    dc_to_store: 2

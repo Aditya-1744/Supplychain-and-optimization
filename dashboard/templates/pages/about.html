@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block title %}About{% endblock %}
+{% block content %}
+<div class="about-hero">
+  <h1>InventoryPro / SupplyChain AI</h1>
+  <p>A 3rd-year Computer Science capstone project demonstrating applied machine learning in supply chain logistics — automated replenishment planning and multi-echelon safety-stock optimization across 5 warehouses and 50 SKUs.</p>
+  <div class="tech-stack" style="justify-content:center;margin-top:20px">
+    <span class="tech-tag">Python</span><span class="tech-tag">FastAPI</span><span class="tech-tag">Pandas / NumPy</span>
+    <span class="tech-tag">scikit-learn</span><span class="tech-tag">Gradient Boosting</span><span class="tech-tag">Chart.js</span><span class="tech-tag">Leaflet</span>
+  </div>
+</div>
+
+<h2 style="font-size:1.3rem;font-weight:800;margin-bottom:16px">Data Processing Pipeline</h2>
+<div class="about-grid mb-6">
+  <div class="about-card">
+    <div class="about-card-icon" style="background:var(--primary-bg);color:var(--primary)">📊</div>
+    <h3>1. Historical Data</h3>
+    <p>3 years of SKU-level daily demand across 5 warehouses (91,250 rows), plus SKU master with ABC/XYZ classification and cost/price data.</p>
+  </div>
+  <div class="about-card">
+    <div class="about-card-icon" style="background:var(--emerald-bg);color:var(--emerald)">⚙️</div>
+    <h3>2. Feature Engineering</h3>
+    <p>Weekly and annual seasonality via Fourier terms, promo flags, coefficient-of-variation based XYZ classification.</p>
+  </div>
+  <div class="about-card">
+    <div class="about-card-icon" style="background:var(--orange-bg);color:var(--orange)">📈</div>
+    <h3>3. Demand Forecast</h3>
+    <p>A production router selects Fourier regression, Gradient Boosting, or Croston per SKU based on archetype and XYZ class.</p>
+  </div>
+  <div class="about-card">
+    <div class="about-card-icon" style="background:var(--purple-bg);color:var(--purple)">✅</div>
+    <h3>4. Optimization</h3>
+    <p>(s,S) policy parameters and multi-echelon pooling math generate order-up-to levels honoring warehouse capacity constraints.</p>
+  </div>
+</div>
+
+<div class="grid-2 mb-6">
+  <div class="about-card">
+    <div class="flex items-center gap-4 mb-4"><span style="font-size:1.5rem">📉</span><h3 style="margin:0">Forecasting Engine</h3></div>
+    <h4 style="margin-bottom:8px">Fourier Seasonal Regression + GBM</h4>
+    <p>Fourier regression (Ridge) decomposes demand into trend, weekly, and annual seasonality. Gradient Boosting handles erratic Z-class SKUs. The router picks per-SKU based on ABC/XYZ class and demand CV.</p>
+    <div style="background:var(--bg-tertiary);border-radius:var(--radius);padding:12px;margin-top:12px;font-size:0.8rem">
+      <div>intermittent → Croston / moving-average baseline</div>
+      <div>smooth + X/Y → Fourier seasonal model</div>
+      <div>smooth + Z → GBM (disagreement flag)</div>
+    </div>
+  </div>
+  <div class="about-card">
+    <div class="flex items-center gap-4 mb-4"><span style="font-size:1.5rem">🧮</span><h3 style="margin:0">Optimization Engine</h3></div>
+    <h4 style="margin-bottom:8px">Multi-Echelon (s, S) Policy</h4>
+    <p>Safety stock via SS = Z × σ × √L. A discrete-event simulation runs (s,S) trajectories over 90-day holdout windows; pooling math quantifies the coordination saving from centralized vs decentralized safety stock.</p>
+    <div style="background:var(--bg-tertiary);border-radius:var(--radius);padding:12px;margin-top:12px;font-size:0.8rem" id="algo-results">Loading…</div>
+  </div>
+</div>
+
+<div class="about-card">
+  <div class="flex items-center gap-4 mb-4"><span style="font-size:1.5rem">🔗</span><h3 style="margin:0">Network Architecture</h3></div>
+  <div class="grid-4">
+    <div class="text-center" style="padding:12px;background:var(--bg-tertiary);border-radius:var(--radius)"><div style="font-size:1.8rem;font-weight:800;color:var(--primary)">50</div><div style="font-size:0.75rem;color:var(--text-secondary);text-transform:uppercase">Active SKUs</div></div>
+    <div class="text-center" style="padding:12px;background:var(--bg-tertiary);border-radius:var(--radius)"><div style="font-size:1.8rem;font-weight:800;color:var(--primary)">5</div><div style="font-size:0.75rem;color:var(--text-secondary);text-transform:uppercase">Warehouses</div></div>
+    <div class="text-center" style="padding:12px;background:var(--bg-tertiary);border-radius:var(--radius)"><div style="font-size:1.8rem;font-weight:800;color:var(--primary)">3</div><div style="font-size:0.75rem;color:var(--text-secondary);text-transform:uppercase">Echelons</div></div>
+    <div class="text-center" style="padding:12px;background:var(--bg-tertiary);border-radius:var(--radius)"><div style="font-size:1.8rem;font-weight:800" id="total-cost-display">—</div><div style="font-size:0.75rem;color:var(--text-secondary);text-transform:uppercase">90-day Cost</div></div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function loadAboutData() {
+  try {
+    const d = await fetchJSON('/api/kpis');
+    document.getElementById('algo-results').innerHTML = `
+      Fill rate A/B/C: ${d.fill_rate_A}% / ${d.fill_rate_B}% / ${d.fill_rate_C}%<br>
+      Coordination saving: ${d.coordination_saving_pct}%<br>
+      Cross-store correlation: ρ = ${d.mean_correlation}
+    `;
+    document.getElementById('total-cost-display').textContent = fmtCurrency(d.total_cost);
+  } catch (e) {}
+}
+loadAboutData();
+</script>
+{% endblock %}

@@ -1,0 +1,53 @@
+# =============================================================================
+# model_params.yaml
+# -----------------------------------------------------------------------------
+# Technical / modelling knobs (as opposed to business rules). Tuning these
+# changes the *shape* of the synthetic data, not the business problem.
+# =============================================================================
+
+simulation:
+  seed: 42                       # reproducibility (Charter assumption #2)
+  start_date: "2024-01-01"
+  horizon_days: 730              # 2 years of daily history
+  holdout_days: 90               # final 90 days reserved for backtesting
+
+# Demand generator settings. Demand is synthesised per (store, SKU, day) as a
+# Poisson draw around a time-varying mean level. The mean level is built from
+# a base rate scaled by trend, weekly seasonality, annual seasonality and
+# promotion uplift. Intermittent SKUs use an occurrence/size process instead.
+demand:
+  base_rate:
+    # Per-SKU base daily demand drawn from a lognormal distribution.
+    lognormal_mean: 1.6          # log-space mean  -> median ~5 units/day
+    lognormal_sigma: 1.1         # log-space spread -> heavy tail (a few big sellers)
+
+  unit_economics:
+    cost_lognormal_mean: 2.3     # unit cost ~ lognormal -> median ~10 currency
+    cost_lognormal_sigma: 0.6
+    gross_margin: 0.35           # price = cost / (1 - margin)
+
+  trend:
+    growth_min: -0.10            # per-SKU lifetime trend, low end (decline)
+    growth_max: 0.30             # high end (growth)
+
+  weekly_seasonality:
+    # Multipliers by weekday (Mon..Sun). Retail lifts on the weekend.
+    multipliers: [0.90, 0.90, 0.95, 1.00, 1.20, 1.45, 1.20]
+
+  annual_seasonality:
+    amplitude_min: 0.10          # peak-to-mean swing, low end
+    amplitude_max: 0.45          # high end (strongly seasonal SKUs)
+
+  promotions:
+    events_per_year: 6           # promo windows per SKU per year (avg)
+    duration_min_days: 3
+    duration_max_days: 7
+    uplift_min: 1.5              # demand multiplier during a promo
+    uplift_max: 3.0
+
+  intermittent:
+    # Fraction of SKUs that are intermittent/lumpy (mostly C-class long tail).
+    target_fraction: 0.30
+    occurrence_prob_min: 0.15    # P(any demand on a given day)
+    occurrence_prob_max: 0.45
+    lump_size_mean: 4.0          # Poisson mean of order size WHEN demand occurs

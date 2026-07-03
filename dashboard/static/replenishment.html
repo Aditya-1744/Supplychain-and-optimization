@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>InventoryPro - Replenishment</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+<script id="tailwind-config">
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        colors: {
+          "on-surface-variant":"#b9cacb","surface-container-low":"#131b2e","primary":"#dbfcff","on-primary":"#00363a","error":"#ffb4ab","surface":"#0b1326","on-background":"#dae2fd","surface-dim":"#0b1326","outline-variant":"#3b494b","on-secondary-container":"#ddcdff","surface-container":"#171f33","surface-container-high":"#222a3d","surface-bright":"#31394d","secondary-container":"#7000ff","secondary":"#d1bcff","primary-container":"#00f0ff","error-container":"#93000a","surface-variant":"#2d3449","surface-container-highest":"#2d3449","on-error":"#690005","surface-container-lowest":"#060e20","on-surface":"#dae2fd","primary-fixed":"#7df4ff","background":"#0b1326","outline":"#849495","on-primary-container":"#006970","on-error-container":"#ffdad6","inverse-on-surface":"#283044",
+        },
+        borderRadius:{ DEFAULT:"0.125rem", lg:"0.25rem", xl:"0.5rem", full:"0.75rem" },
+        spacing:{ sm:"12px", gutter:"24px", margin:"32px", md:"24px", lg:"48px", base:"8px", xs:"4px", "sidebar-width":"280px", "container-padding":"32px" },
+        fontFamily:{ "headline-md":["Montserrat","sans-serif"], "label-sm":["JetBrains Mono","monospace"], "kpi-value":["Montserrat","sans-serif"], "display-lg":["Montserrat","sans-serif"], "body-md":["Montserrat","sans-serif"], "table-data":["Montserrat","sans-serif"], "label-md":["JetBrains Mono","monospace"], "mono-data":["JetBrains Mono","monospace"] },
+        fontSize:{
+          "headline-md":["24px",{lineHeight:"1.3",letterSpacing:"-0.01em",fontWeight:"600"}],
+          "label-sm":["12px",{lineHeight:"1",letterSpacing:"0.08em",fontWeight:"500"}],
+          "kpi-value":["28px",{lineHeight:"1",letterSpacing:"0.05em",fontWeight:"700"}],
+          "display-lg":["48px",{lineHeight:"1.1",letterSpacing:"-0.02em",fontWeight:"700"}],
+          "body-md":["16px",{lineHeight:"1.6",letterSpacing:"0.01em",fontWeight:"400"}],
+          "table-data":["14px",{lineHeight:"1.4",letterSpacing:"0.03em",fontWeight:"500"}],
+          "label-md":["14px",{lineHeight:"1.2",letterSpacing:"0.05em",fontWeight:"600"}],
+          "mono-data":["13px",{lineHeight:"1",letterSpacing:"0.05em",fontWeight:"500"}]
+        }
+      }
+    }
+  }
+</script>
+<style>
+  .material-symbols-outlined { font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24; }
+  .material-symbols-outlined.fill { font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 24; }
+  ::-webkit-scrollbar { width:8px; height:8px; }
+  ::-webkit-scrollbar-track { background:#0b1326; }
+  ::-webkit-scrollbar-thumb { background:#3b494b; border-radius:4px; }
+  ::-webkit-scrollbar-thumb:hover { background:#849495; }
+  .bg-pattern { background-image: radial-gradient(circle at 2px 2px, rgba(218,226,253,0.05) 1px, transparent 0); background-size:24px 24px; }
+</style>
+</head>
+<body class="bg-background text-on-surface font-body-md min-h-screen overflow-x-hidden antialiased bg-pattern selection:bg-primary-container selection:text-on-primary-container">
+
+<!-- TopNavBar -->
+<header class="fixed top-0 right-0 left-[280px] flex justify-between items-center px-margin h-[80px] z-30 bg-surface-dim/90 backdrop-blur-md border-b border-outline-variant">
+  <h1 class="font-headline-md text-headline-md text-on-surface font-bold tracking-tight">Inventory Optimization</h1>
+  <div class="flex items-center gap-gutter">
+    <div class="relative w-64">
+      <span class="material-symbols-outlined absolute left-sm top-1/2 -translate-y-1/2 text-on-surface-variant text-lg">search</span>
+      <input class="w-full bg-surface-container-high border-b-2 border-outline-variant focus:border-primary text-on-surface py-sm pl-10 pr-sm rounded-t-DEFAULT focus:outline-none font-table-data text-table-data placeholder:text-on-surface-variant transition-colors" placeholder="Search SKUs, categories..." type="text">
+    </div>
+    <div class="flex items-center gap-sm border-l border-outline-variant pl-gutter">
+      <button class="p-xs text-on-surface-variant hover:text-primary transition-colors"><span class="material-symbols-outlined">light_mode</span></button>
+      <button class="p-xs text-on-surface-variant hover:text-primary transition-colors relative"><span class="material-symbols-outlined">notifications</span><span class="absolute top-0 right-0 w-2 h-2 bg-error rounded-full"></span></button>
+      <button class="p-xs text-on-surface-variant hover:text-primary transition-colors"><span class="material-symbols-outlined">settings</span></button>
+      <div class="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center ml-sm font-bold text-on-primary-container text-sm">AD</div>
+    </div>
+  </div>
+</header>
+
+<!-- SideNavBar -->
+<nav class="fixed left-0 top-0 h-full z-40 flex flex-col w-[280px] bg-surface-container-lowest border-r border-outline-variant">
+  <div class="p-gutter border-b border-outline-variant mb-sm">
+    <div class="flex items-center gap-sm mb-2">
+      <div class="w-12 h-12 rounded-lg bg-primary-container flex items-center justify-center shrink-0">
+        <span class="material-symbols-outlined text-on-primary-container" style="font-variation-settings:'FILL' 1">inventory_2</span>
+      </div>
+      <div>
+        <h1 class="font-headline-md text-headline-md font-bold text-primary">InventoryPro</h1>
+        <p class="font-label-sm text-label-sm text-on-surface-variant uppercase mt-1">Supply Chain AI</p>
+      </div>
+    </div>
+  </div>
+  <div class="flex-1 py-gutter px-sm overflow-y-auto">
+    <ul class="space-y-base">
+      <li><a class="flex items-center gap-sm px-md py-sm rounded-lg text-on-surface-variant hover:bg-surface-container transition-colors" href="/"><span class="material-symbols-outlined">dashboard</span><span class="font-table-data text-table-data">Dashboard</span></a></li>
+      <li><a class="flex items-center gap-sm px-md py-sm rounded-lg text-primary border-l-4 border-primary bg-primary-fixed/10 font-semibold" href="/replenishment"><span class="material-symbols-outlined fill">inventory_2</span><span class="font-table-data text-table-data">Replenishment</span></a></li>
+      <li><a class="flex items-center gap-sm px-md py-sm rounded-lg text-on-surface-variant hover:bg-surface-container transition-colors" href="/planning"><span class="material-symbols-outlined">analytics</span><span class="font-table-data text-table-data">Planning</span></a></li>
+    </ul>
+  </div>
+  <div class="p-sm border-t border-outline-variant">
+    <ul class="space-y-base mb-md">
+      <li><a class="flex items-center gap-sm px-md py-sm rounded-lg text-on-surface-variant hover:bg-surface-container transition-colors" href="/about"><span class="material-symbols-outlined">info</span><span class="font-table-data text-table-data">About</span></a></li>
+      <li><a class="flex items-center gap-sm px-md py-sm rounded-lg text-on-surface-variant hover:bg-surface-container transition-colors" href="/feedback"><span class="material-symbols-outlined">rate_review</span><span class="font-table-data text-table-data">Feedback</span></a></li>
+    </ul>
+    <a href="/planning" class="w-full bg-primary-container text-on-primary-container font-label-md text-label-md py-sm px-md rounded-lg hover:bg-primary transition-colors flex items-center justify-center gap-sm">
+      <span class="material-symbols-outlined text-sm">add</span> New Scenario
+    </a>
+  </div>
+</nav>
+
+<!-- Main Content -->
+<main class="ml-[280px] mt-[80px] p-container-padding">
+  <div class="mb-gutter flex justify-between items-end">
+    <div>
+      <h2 class="font-display-lg text-[32px] font-bold text-on-surface mb-xs">Optimization &amp; Replenishment</h2>
+      <p class="font-body-md text-body-md text-on-surface-variant">Manage SKU levels, review AI-generated purchase orders, and monitor safety stock parameters.</p>
+    </div>
+    <div class="flex gap-md">
+      <button class="border border-outline-variant text-on-surface font-label-md text-label-md py-sm px-md rounded-lg hover:bg-surface-container transition-colors flex items-center gap-xs">
+        <span class="material-symbols-outlined text-sm">download</span> Export Data
+      </button>
+      <button onclick="runOptimization()" class="bg-primary-container text-on-primary-container font-label-md text-label-md py-sm px-md rounded-lg hover:bg-primary transition-colors flex items-center gap-xs">
+        <span class="material-symbols-outlined text-sm">sync</span> Run Optimization
+      </button>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-12 gap-gutter">
+    <!-- SKU Management Grid (8 cols) -->
+    <div class="col-span-12 xl:col-span-8 bg-surface-container border border-outline-variant rounded-xl flex flex-col overflow-hidden h-[600px]">
+      <div class="p-md border-b border-outline-variant flex justify-between items-center bg-surface-container-highest">
+        <h3 class="font-headline-md text-headline-md text-on-surface flex items-center gap-sm">
+          <span class="material-symbols-outlined text-primary">table_chart</span> SKU Management
+        </h3>
+        <div class="flex gap-sm">
+          <div class="relative">
+            <span class="material-symbols-outlined absolute left-sm top-1/2 -translate-y-1/2 text-on-surface-variant text-sm">filter_list</span>
+            <select id="abc-filter" onchange="loadSKUs(this.value)" class="pl-xl pr-md py-xs text-table-data font-table-data bg-surface rounded border border-outline-variant text-on-surface focus:ring-primary focus:border-primary outline-none">
+              <option value="all">All Classes</option>
+              <option value="A">Class A</option>
+              <option value="B">Class B</option>
+              <option value="C">Class C</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="flex-1 overflow-auto bg-surface-container-low">
+        <table class="w-full text-left border-collapse">
+          <thead class="sticky top-0 bg-surface-container-high z-10 border-b border-outline-variant">
+            <tr>
+              <th class="py-sm px-md font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider w-24">SKU ID</th>
+              <th class="py-sm px-md font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Description</th>
+              <th class="py-sm px-md font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider w-32">Class (ABC/XYZ)</th>
+              <th class="py-sm px-md font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider text-right w-28">Current Stock</th>
+              <th class="py-sm px-md font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider w-32">Status</th>
+              <th class="py-sm px-md font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider w-20 text-center">Action</th>
+            </tr>
+          </thead>
+          <tbody id="sku-tbody" class="font-table-data text-table-data divide-y divide-outline-variant">
+            <tr><td colspan="6" class="py-sm px-md text-on-surface-variant text-center">Loading SKUs…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Right Column (4 cols) -->
+    <div class="col-span-12 xl:col-span-4 flex flex-col gap-gutter h-[600px]">
+      <!-- Replenishment Orders -->
+      <div class="flex-1 bg-surface-container border border-outline-variant rounded-xl shadow-[0_4px_8px_rgba(0,0,0,0.2)] flex flex-col overflow-hidden">
+        <div class="p-md border-b border-outline-variant bg-surface-container-highest flex justify-between items-center">
+          <div class="flex items-center gap-sm">
+            <span class="material-symbols-outlined text-primary-container">smart_toy</span>
+            <h3 class="font-headline-md text-headline-md text-on-surface">Replenishment</h3>
+          </div>
+          <span id="order-count-badge" class="bg-primary-container text-on-primary-container font-label-sm text-label-sm px-2 py-1 rounded-full">— AI Orders</span>
+        </div>
+        <div id="orders-list" class="flex-1 overflow-y-auto p-sm flex flex-col gap-sm bg-surface-container-low">
+          <div class="text-on-surface-variant text-center py-4 font-table-data text-table-data">Loading orders…</div>
+        </div>
+      </div>
+
+      <!-- Safety Stock Model -->
+      <div class="h-64 bg-surface-container border border-outline-variant rounded-xl p-md shadow-[0_4px_8px_rgba(0,0,0,0.2)] relative overflow-hidden flex flex-col group hover:bg-surface-container-high transition-colors">
+        <div class="absolute -right-8 -top-8 w-32 h-32 rounded-full bg-primary-container/10 blur-2xl"></div>
+        <h3 class="font-headline-md text-headline-md flex items-center gap-sm text-on-surface mb-md relative z-10">
+          <span class="material-symbols-outlined text-primary">functions</span> Safety Stock Model
+        </h3>
+        <div class="bg-surface-container-lowest rounded p-sm border border-outline-variant font-mono-data text-mono-data text-primary text-center mb-md relative z-10 tracking-widest text-[16px] shadow-inner">
+          SS = Z × σ<sub class="text-[10px]">d</sub> × √L
+        </div>
+        <div class="flex-1 flex flex-col gap-sm relative z-10">
+          <div class="flex justify-between items-center text-[13px] font-body-md text-on-surface-variant">
+            <span>Service Level (Z)</span>
+            <span class="font-mono-data text-primary" id="ss-z">95% (1.645)</span>
+          </div>
+          <div class="w-full bg-surface-variant/30 rounded-full h-1.5 mt-1 border border-outline-variant/50">
+            <div class="bg-primary h-1.5 rounded-full" style="width:80%"></div>
+          </div>
+          <div class="flex justify-between items-center mt-auto">
+            <span class="font-table-data text-table-data text-on-surface">Auto-Replenish</span>
+            <label class="relative inline-flex items-center cursor-pointer">
+              <input checked id="auto-replenish-toggle" class="sr-only peer" type="checkbox">
+              <div class="w-9 h-5 bg-surface-variant/50 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary"></div>
+            </label>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+const STATUS_COLORS = {
+  Critical: 'text-error',
+  Warning: 'text-yellow-400',
+  Optimal: 'text-primary',
+  Overstock: 'text-secondary',
+};
+const STATUS_DOT = {
+  Critical: 'bg-error',
+  Warning: 'bg-yellow-400',
+  Optimal: 'bg-primary',
+  Overstock: 'bg-secondary',
+};
+const ABC_BADGE_CLASS = {
+  A: 'bg-error-container text-on-error-container',
+  B: 'bg-primary-fixed/20 text-primary border border-primary/30',
+  C: 'bg-surface-container text-on-surface-variant border border-outline-variant',
+};
+
+async function loadSKUs(filter = 'all') {
+  const tbody = document.getElementById('sku-tbody');
+  tbody.innerHTML = '<tr><td colspan="6" class="py-sm px-md text-on-surface-variant text-center">Loading…</td></tr>';
+  try {
+    const r = await fetch('/api/sku-list?abc_class=' + filter);
+    const d = await r.json();
+    if (!d.skus.length) {
+      tbody.innerHTML = '<tr><td colspan="6" class="py-sm px-md text-on-surface-variant text-center">No SKUs found.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = d.skus.map(sku => `
+      <tr class="hover:bg-surface-bright transition-colors group">
+        <td class="py-sm px-md font-mono-data text-mono-data text-primary font-bold">${sku.sku_id}</td>
+        <td class="py-sm px-md text-on-surface font-medium truncate max-w-[200px]" title="${sku.description}">${sku.description}</td>
+        <td class="py-sm px-md">
+          <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold ${ABC_BADGE_CLASS[sku.abc_class] || ''} uppercase tracking-wider">${sku.abc_xyz}</span>
+        </td>
+        <td class="py-sm px-md text-right font-mono-data text-mono-data">${sku.current_stock.toLocaleString()}</td>
+        <td class="py-sm px-md">
+          <div class="flex items-center gap-xs ${STATUS_COLORS[sku.status] || 'text-on-surface'} font-medium">
+            <span class="w-2 h-2 rounded-full ${STATUS_DOT[sku.status] || 'bg-outline'}"></span> ${sku.status}
+          </div>
+        </td>
+        <td class="py-sm px-md text-center">
+          <button class="text-on-surface-variant hover:text-primary transition-colors opacity-0 group-hover:opacity-100"><span class="material-symbols-outlined text-md">edit</span></button>
+        </td>
+      </tr>
+    `).join('');
+  } catch(e) {
+    tbody.innerHTML = '<tr><td colspan="6" class="py-sm px-md text-error text-center">Failed to load SKU data.</td></tr>';
+  }
+}
+
+async function loadOrders() {
+  const list = document.getElementById('orders-list');
+  try {
+    const r = await fetch('/api/replenishment');
+    const d = await r.json();
+    document.getElementById('order-count-badge').textContent = d.orders.length + ' AI Orders';
+    if (!d.orders.length) {
+      list.innerHTML = '<div class="text-on-surface-variant text-center py-4 font-table-data text-table-data">No pending orders.</div>';
+      return;
+    }
+    list.innerHTML = d.orders.map(o => `
+      <div class="border border-outline-variant rounded-lg p-sm bg-surface-container-high hover:bg-surface-bright transition-colors cursor-pointer group">
+        <div class="flex justify-between items-start mb-1">
+          <div class="font-mono-data text-mono-data text-primary font-bold">${o.po_id}</div>
+          ${o.urgent ? '<span class="bg-error-container text-on-error-container text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider">Urgent</span>' : ''}
+        </div>
+        <div class="font-table-data text-table-data text-on-surface font-bold mb-1">${o.description}</div>
+        <div class="flex justify-between text-[13px] font-body-md text-on-surface-variant mb-sm">
+          <span>Qty: ${o.qty} units</span>
+          <span>${o.supplier}</span>
+        </div>
+        <div class="flex gap-sm">
+          <button onclick="approveOrder('${o.po_id}')" class="flex-1 bg-primary-container text-on-primary-container font-label-sm text-label-sm py-1.5 rounded hover:bg-primary transition-colors">Approve</button>
+          <button class="flex-1 border border-outline-variant text-on-surface font-label-sm text-label-sm py-1.5 rounded hover:bg-surface-container transition-colors">Modify</button>
+        </div>
+      </div>
+    `).join('');
+  } catch(e) {
+    list.innerHTML = '<div class="text-error text-center py-4 font-table-data text-table-data">Failed to load orders.</div>';
+  }
+}
+
+async function loadSSParams() {
+  try {
+    const r = await fetch('/api/safety-stock-params');
+    const d = await r.json();
+    document.getElementById('ss-z').textContent = d.service_level_pct + '% (' + d.service_level_z.toFixed(3) + ')';
+    document.getElementById('auto-replenish-toggle').checked = d.auto_replenish;
+  } catch(e) {}
+}
+
+function approveOrder(poId) {
+  event.stopPropagation();
+  const btn = event.target;
+  btn.textContent = 'Approved ✓';
+  btn.classList.remove('bg-primary-container','text-on-primary-container');
+  btn.classList.add('bg-surface-container','text-on-surface-variant');
+  btn.disabled = true;
+}
+
+function runOptimization() {
+  const btn = event.target;
+  btn.textContent = 'Running…';
+  btn.disabled = true;
+  setTimeout(() => {
+    btn.textContent = 'Run Optimization';
+    btn.disabled = false;
+    loadOrders();
+    loadSKUs(document.getElementById('abc-filter').value);
+  }, 1500);
+}
+
+loadSKUs('all');
+loadOrders();
+loadSSParams();
+</script>
+</body>
+</html>

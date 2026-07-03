@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}AI Assistant{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="breadcrumb"><a href="/">Dashboard</a> / <span>AI Assistant</span></div>
+    <h1>AI Recommendation Center</h1>
+    <p>Rule-based assistant grounded in the live policy run — no external LLM, every answer is computed from the current data.</p>
+  </div>
+</div>
+
+<div class="ai-chat-container">
+  <div class="chat-sidebar">
+    <h3>💡 Suggested Questions</h3>
+    <div class="suggestion-item" onclick="sendSuggestion('What should I reorder right now?')">📦 What should I reorder right now?</div>
+    <div class="suggestion-item" onclick="sendSuggestion('Which supplier is highest risk?')">🏢 Which supplier is highest risk?</div>
+    <div class="suggestion-item" onclick="sendSuggestion('Which warehouse has highest utilization?')">🏭 Which warehouse has highest utilization?</div>
+    <div class="suggestion-item" onclick="sendSuggestion('What is our current cost and savings?')">💰 What is our current cost and savings?</div>
+    <div class="suggestion-item" onclick="sendSuggestion('How accurate is the forecast?')">📈 How accurate is the forecast?</div>
+  </div>
+
+  <div class="chat-main">
+    <div class="chat-messages" id="chatMessages">
+      <div class="chat-message ai">
+        <div class="chat-avatar ai">AI</div>
+        <div class="chat-bubble">
+          <div class="chat-bubble-content">Hi — I can answer questions about reorder priorities, supplier risk, warehouse capacity, cost, and forecast performance, all computed live from the current policy run. What would you like to know?</div>
+          <div class="chat-bubble-time">Just now</div>
+        </div>
+      </div>
+    </div>
+    <div class="chat-input-area">
+      <input type="text" id="chatInput" placeholder="Ask about reorders, suppliers, warehouses, costs…" onkeypress="if(event.key==='Enter') sendMessage()">
+      <button class="chat-send-btn" onclick="sendMessage()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+      </button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function appendMessage(role, text) {
+  const messages = document.getElementById('chatMessages');
+  const avatar = role === 'ai' ? 'AI' : 'You';
+  messages.insertAdjacentHTML('beforeend', `
+    <div class="chat-message ${role}">
+      <div class="chat-avatar ${role}">${avatar}</div>
+      <div class="chat-bubble"><div class="chat-bubble-content">${text}</div><div class="chat-bubble-time">Just now</div></div>
+    </div>
+  `);
+  messages.scrollTop = messages.scrollHeight;
+}
+
+async function sendMessage() {
+  const input = document.getElementById('chatInput');
+  const msg = input.value.trim();
+  if (!msg) return;
+  appendMessage('user', msg);
+  input.value = '';
+  try {
+    const d = await fetchJSON('/api/ai-chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message: msg }) });
+    appendMessage('ai', d.reply);
+  } catch (e) {
+    appendMessage('ai', 'Something went wrong reaching the data layer — please try again.');
+  }
+}
+
+function sendSuggestion(text) { document.getElementById('chatInput').value = text; sendMessage(); }
+</script>
+{% endblock %}

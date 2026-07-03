@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Distribution Network{% endblock %}
+{% block extra_head %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
+{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="breadcrumb"><a href="/">Dashboard</a> / <span>Distribution Network</span></div>
+    <h1>Distribution Network</h1>
+    <p>5 warehouses and 10 suppliers, real utilization and risk overlaid on their assigned locations.</p>
+  </div>
+</div>
+
+<div class="chart-card">
+  <div class="chart-header">
+    <div><div class="chart-title">Global Network Map</div><div class="chart-subtitle">Blue = warehouse, colored by risk = supplier</div></div>
+  </div>
+  <div class="chart-body tall" id="networkMap" style="border-radius:var(--radius)"></div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let map, mapInit = false;
+
+async function loadMap() {
+  const d = await fetchJSON('/api/distribution');
+  if (!mapInit) {
+    map = L.map('networkMap').setView([25, -30], 2);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(map);
+    mapInit = true;
+  }
+  const riskColor = { Low: '#10B981', Medium: '#F59E0B', High: '#ef4444' };
+
+  d.routes.forEach(r => L.polyline([r.from, r.to], { color: '#94a3b8', weight: 1, opacity: 0.35, dashArray: '4,8' }).addTo(map));
+  d.warehouses.forEach(w => L.circleMarker([w.lat, w.lon], { radius: 11, fillColor: '#2563EB', color: 'white', weight: 2, fillOpacity: 0.9 })
+    .addTo(map).bindPopup(`<strong>${w.name}</strong><br>Utilization: ${w.utilization_pct}%`));
+  d.suppliers.forEach(s => L.circleMarker([s.lat, s.lon], { radius: 9, fillColor: riskColor[s.risk_level], color: 'white', weight: 2, fillOpacity: 0.9 })
+    .addTo(map).bindPopup(`<strong>${s.name}</strong><br>${s.country} · ${s.risk_level} risk`));
+
+  setTimeout(() => map.invalidateSize(), 150);
+}
+
+loadMap();
+</script>
+{% endblock %}

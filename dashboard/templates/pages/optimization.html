@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% block title %}Inventory Optimization{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="breadcrumb"><a href="/">Dashboard</a> / <span>Inventory Optimization</span></div>
+    <h1>Inventory Optimization</h1>
+    <p>Safety stock, EOQ, and reorder points from the (s,S) policy — plus a live simulator over the real cost model.</p>
+  </div>
+</div>
+
+<div class="kpi-grid" id="optKpis">
+  <div class="kpi-card"><div class="kpi-header"><div class="kpi-icon blue">📦</div></div><div class="kpi-value" id="opt-inv-value">—</div><div class="kpi-label">Current Inventory Value</div></div>
+  <div class="kpi-card"><div class="kpi-header"><div class="kpi-icon emerald">🛡️</div></div><div class="kpi-value" id="opt-ss-value">—</div><div class="kpi-label">Safety Stock Value</div></div>
+  <div class="kpi-card"><div class="kpi-header"><div class="kpi-icon orange">⚖️</div></div><div class="kpi-value" id="opt-eoq">—</div><div class="kpi-label">Avg EOQ (units)</div></div>
+  <div class="kpi-card"><div class="kpi-header"><div class="kpi-icon purple">🔄</div></div><div class="kpi-value" id="opt-reorder">—</div><div class="kpi-label">Avg Reorder Point</div></div>
+  <div class="kpi-card"><div class="kpi-header"><div class="kpi-icon blue">💡</div></div><div class="kpi-value" id="opt-savings" style="color:var(--emerald)">—</div><div class="kpi-label">Coordination Saving (annualized)</div></div>
+</div>
+
+<div class="simulator-grid">
+  <div class="simulator-controls">
+    <h3 style="margin-bottom:20px;font-size:1.1rem">Safety Stock Model</h3>
+    <div style="background:var(--bg-tertiary);border-radius:var(--radius);padding:12px;text-align:center;font-family:monospace;font-size:1.1rem;color:var(--primary);margin-bottom:16px">
+      SS = Z × σ<sub>d</sub> × √L
+    </div>
+    <div class="flex justify-between mb-4" style="font-size:0.85rem"><span>Service Level (Z)</span><strong id="opt-z">—</strong></div>
+    <div class="flex justify-between mb-4" style="font-size:0.85rem"><span>Lead time (factory→DC→store)</span><strong id="opt-lead">—</strong></div>
+    <hr style="border-color:var(--border);margin:16px 0">
+    <h3 style="margin-bottom:16px;font-size:1.1rem">Live (s,S) Simulator</h3>
+    <div class="form-group mb-4"><label class="form-label">ABC Class</label>
+      <select class="form-input" id="s-abc"><option>A</option><option selected>B</option><option>C</option></select>
+    </div>
+    <div class="slider-group">
+      <div class="slider-header"><span class="slider-label">Unit Cost ($)</span><span class="slider-value" id="s-cost-val">15.0</span></div>
+      <input type="range" id="s-cost" min="2" max="50" value="15" oninput="document.getElementById('s-cost-val').textContent=this.value">
+    </div>
+    <div class="slider-group">
+      <div class="slider-header"><span class="slider-label">Lead Time (days)</span><span class="slider-value" id="s-lead-val">3</span></div>
+      <input type="range" id="s-lead" min="1" max="21" value="3" oninput="document.getElementById('s-lead-val').textContent=this.value">
+    </div>
+    <div class="slider-group">
+      <div class="slider-header"><span class="slider-label">Mean Daily Demand</span><span class="slider-value" id="s-mean-val">15</span></div>
+      <input type="range" id="s-mean" min="2" max="150" value="15" oninput="document.getElementById('s-mean-val').textContent=this.value">
+    </div>
+    <div class="slider-group">
+      <div class="slider-header"><span class="slider-label">Demand Std Dev</span><span class="slider-value" id="s-std-val">4</span></div>
+      <input type="range" id="s-std" min="1" max="60" value="4" oninput="document.getElementById('s-std-val').textContent=this.value">
+    </div>
+    <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="runSimulate()">Recalculate</button>
+  </div>
+
+  <div>
+    <div class="kpi-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:16px">
+      <div class="kpi-card"><div class="kpi-label">Reorder Point</div><div class="kpi-value" id="sim-reorder" style="font-size:1.3rem">—</div></div>
+      <div class="kpi-card"><div class="kpi-label">Order-Up-To</div><div class="kpi-value" id="sim-orderupto" style="font-size:1.3rem">—</div></div>
+      <div class="kpi-card"><div class="kpi-label">EOQ</div><div class="kpi-value" id="sim-eoq" style="font-size:1.3rem">—</div></div>
+      <div class="kpi-card"><div class="kpi-label">Fill Rate</div><div class="kpi-value" id="sim-fillrate" style="font-size:1.3rem">—</div></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-header"><div><div class="chart-title">Simulated On-Hand Trajectory</div><div class="chart-subtitle">90-day (s,S) policy simulation, real DES engine</div></div></div>
+      <div class="chart-body tall"><canvas id="simChart"></canvas></div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function loadSummary() {
+  const [d, ss] = await Promise.all([fetchJSON('/api/optimization-summary'), fetchJSON('/api/safety-stock-params')]);
+  document.getElementById('opt-inv-value').textContent = fmtCurrency(d.inventory_value);
+  document.getElementById('opt-ss-value').textContent = fmtCurrency(d.safety_stock_value);
+  document.getElementById('opt-eoq').textContent = fmtNumber(d.avg_eoq);
+  document.getElementById('opt-reorder').textContent = fmtNumber(d.avg_reorder_pt);
+  document.getElementById('opt-savings').textContent = fmtCurrency(d.potential_savings_annual);
+  document.getElementById('opt-z').textContent = ss.service_level_pct + '% (' + ss.service_level_z.toFixed(3) + ')';
+  document.getElementById('opt-lead').textContent = ss.lead_time_days.factory_to_dc + 'd + ' + ss.lead_time_days.dc_to_store + 'd';
+}
+
+async function runSimulate() {
+  const payload = {
+    abc_class: document.getElementById('s-abc').value,
+    unit_cost: parseFloat(document.getElementById('s-cost').value),
+    lead_time: parseInt(document.getElementById('s-lead').value),
+    mean_demand: parseFloat(document.getElementById('s-mean').value),
+    demand_std: parseFloat(document.getElementById('s-std').value),
+    n_days: 90,
+  };
+  try {
+    const d = await fetchJSON('/api/simulate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+    document.getElementById('sim-reorder').textContent = fmtNumber(d.reorder_point);
+    document.getElementById('sim-orderupto').textContent = fmtNumber(d.order_up_to);
+    document.getElementById('sim-eoq').textContent = fmtNumber(d.eoq);
+    document.getElementById('sim-fillrate').textContent = d.fill_rate + '%';
+    const c = getChartColors();
+    createChart('simChart', {
+      type: 'line',
+      data: { labels: d.daily_on_hand.map((_, i) => 'Day ' + (i + 1)), datasets: [
+        { label: 'On Hand', data: d.daily_on_hand, borderColor: c.primary, backgroundColor: c.primary + '15', fill: true, tension: 0.2, borderWidth: 2, pointRadius: 0 },
+        { label: 'Reorder Point', data: d.daily_on_hand.map(() => d.reorder_point), borderColor: c.orange, borderDash: [4, 4], borderWidth: 1, pointRadius: 0 },
+      ]},
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top' } },
+        scales: { x: { grid: { display: false }, ticks: { maxTicksLimit: 10 } }, y: { grid: { color: c.grid } } } }
+    });
+  } catch (e) { showToast('Simulation failed', 'error'); }
+}
+
+window.rerenderCharts = runSimulate;
+loadSummary();
+runSimulate();
+</script>
+{% endblock %}

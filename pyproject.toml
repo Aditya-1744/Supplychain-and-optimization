@@ -1,0 +1,12 @@
+[project]
+name = "supply-chain-optimization"
+version = "0.1.0"
+description = "Multi-echelon inventory optimization on synthetic supply-chain data"
+requires-python = ">=3.10"
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100

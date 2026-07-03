@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+{% block title %}Demand Forecasting{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="breadcrumb"><a href="/">Dashboard</a> / <span>Demand Forecasting</span></div>
+    <h1>Demand Forecasting</h1>
+    <p>Class-A demand trend plus a live forecast sandbox that routes to the actual Fourier / GBM / Croston models.</p>
+  </div>
+</div>
+
+<div class="chart-grid">
+  <div class="chart-card col-12">
+    <div class="chart-header">
+      <div><div class="chart-title">Aggregated Class-A Demand</div><div class="chart-subtitle">Forecast vs actual</div></div>
+      <div style="display:flex;gap:4px">
+        <button class="filter-chip active period-btn" data-period="7D" onclick="loadDemandChart('7D')">7D</button>
+        <button class="filter-chip period-btn" data-period="30D" onclick="loadDemandChart('30D')">30D</button>
+        <button class="filter-chip period-btn" data-period="YTD" onclick="loadDemandChart('YTD')">YTD</button>
+      </div>
+    </div>
+    <div class="chart-body tall"><canvas id="demandChart"></canvas></div>
+  </div>
+</div>
+
+<div class="simulator-grid">
+  <div class="simulator-controls">
+    <h3 style="margin-bottom:20px;font-size:1.1rem">Live Forecast Sandbox</h3>
+    <div class="form-group mb-4"><label class="form-label">SKU ID</label><input class="form-input" id="f-sku" value="LIVE-001"></div>
+    <div class="form-group mb-4"><label class="form-label">ABC Class</label>
+      <select class="form-input" id="f-abc"><option>A</option><option selected>B</option><option>C</option></select>
+    </div>
+    <div class="form-group mb-4"><label class="form-label">Archetype</label>
+      <select class="form-input" id="f-archetype"><option value="smooth">smooth</option><option value="intermittent">intermittent</option></select>
+    </div>
+    <div class="form-group mb-4"><label class="form-label">XYZ Class</label>
+      <select class="form-input" id="f-xyz"><option>X</option><option>Y</option><option selected>Z</option></select>
+    </div>
+    <div class="slider-group">
+      <div class="slider-header"><span class="slider-label">Demand CV</span><span class="slider-value" id="f-cv-val">0.30</span></div>
+      <input type="range" id="f-cv" min="5" max="120" value="30" oninput="document.getElementById('f-cv-val').textContent=(this.value/100).toFixed(2)">
+    </div>
+    <div class="slider-group">
+      <div class="slider-header"><span class="slider-label">Base Daily Demand</span><span class="slider-value" id="f-demand-val">20</span></div>
+      <input type="range" id="f-demand" min="2" max="150" value="20" oninput="document.getElementById('f-demand-val').textContent=this.value">
+    </div>
+    <div class="slider-group">
+      <div class="slider-header"><span class="slider-label">Forecast Horizon</span><span class="slider-value" id="f-horizon-val">14d</span></div>
+      <input type="range" id="f-horizon" min="7" max="60" value="14" oninput="document.getElementById('f-horizon-val').textContent=this.value+'d'">
+    </div>
+    <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="runForecast()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+      Run Live Forecast
+    </button>
+    <div id="routeBadge" class="mt-4" style="font-size:0.8rem;color:var(--text-secondary)"></div>
+  </div>
+
+  <div class="chart-card">
+    <div class="chart-header"><div><div class="chart-title">Live Sandbox Output</div><div class="chart-subtitle">History (last 30d) + forecast, routed by the production model router</div></div></div>
+    <div class="chart-body tall"><canvas id="sandboxChart"></canvas></div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function loadDemandChart(period) {
+  document.querySelectorAll('.period-btn').forEach(b => b.classList.toggle('active', b.dataset.period === period));
+  const d = await fetchJSON('/api/demand-forecast?period=' + period);
+  const c = getChartColors();
+  createChart('demandChart', {
+    type: 'line',
+    data: { labels: d.dates, datasets: [
+      { label: 'Forecast', data: d.forecast, borderColor: c.primary, backgroundColor: c.primary + '20', fill: true, tension: 0.4, borderWidth: 3 },
+      { label: 'Actual', data: d.actual, borderColor: c.emerald, borderDash: [5, 5], fill: false, tension: 0.4, borderWidth: 3 },
+    ]},
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top' } },
+      scales: { x: { grid: { display: false } }, y: { grid: { color: c.grid } } } }
+  });
+}
+
+async function runForecast() {
+  const payload = {
+    sku_id: document.getElementById('f-sku').value || 'LIVE-001',
+    abc_class: document.getElementById('f-abc').value,
+    archetype: document.getElementById('f-archetype').value,
+    xyz_class: document.getElementById('f-xyz').value,
+    demand_cv: parseInt(document.getElementById('f-cv').value) / 100,
+    base_daily_demand: parseFloat(document.getElementById('f-demand').value),
+    horizon: parseInt(document.getElementById('f-horizon').value),
+  };
+  try {
+    const d = await fetchJSON('/api/forecast', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+    const c = getChartColors();
+    createChart('sandboxChart', {
+      type: 'line',
+      data: { labels: [...d.history_dates, ...d.forecast_dates], datasets: [
+        { label: 'History', data: [...d.history_values, ...Array(d.forecast_dates.length).fill(null)], borderColor: c.text, borderWidth: 2, tension: 0.3, pointRadius: 0 },
+        { label: 'Forecast', data: [...Array(d.history_dates.length).fill(null), ...d.forecast_values], borderColor: c.primary, backgroundColor: c.primary + '20', fill: true, borderWidth: 3, tension: 0.3, pointRadius: 0 },
+      ]},
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top' } },
+        scales: { x: { grid: { display: false }, ticks: { maxTicksLimit: 10 } }, y: { grid: { color: c.grid } } } }
+    });
+    const badge = document.getElementById('routeBadge');
+    badge.innerHTML = `Routed model: <strong style="color:var(--primary)">${d.routed_model}</strong>` +
+      (d.is_disagreement ? ` <span style="color:var(--orange)">(disagreement flag — chosen: ${d.chosen_submodel})</span>` : '');
+    showToast('Forecast generated', 'success');
+  } catch (e) { showToast('Forecast failed', 'error'); }
+}
+
+window.rerenderCharts = () => loadDemandChart(document.querySelector('.period-btn.active')?.dataset.period || '30D');
+loadDemandChart('30D');
+runForecast();
+</script>
+{% endblock %}

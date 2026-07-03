@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Feedback &amp; Monitoring - InventoryPro</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+<script id="tailwind-config">
+  tailwind.config = {
+    darkMode:"class",
+    theme:{
+      extend:{
+        colors:{"on-surface-variant":"#b9cacb","surface-container-low":"#131b2e","primary":"#dbfcff","on-primary":"#00363a","error":"#ffb4ab","surface":"#0b1326","on-background":"#dae2fd","surface-tint":"#00dbe9","primary-fixed-dim":"#00dbe9","surface-dim":"#0b1326","outline-variant":"#3b494b","on-secondary-container":"#ddcdff","surface-container":"#171f33","surface-container-high":"#222a3d","surface-bright":"#31394d","secondary-container":"#7000ff","secondary":"#d1bcff","primary-container":"#00f0ff","error-container":"#93000a","surface-variant":"#2d3449","surface-container-highest":"#2d3449","on-error":"#690005","surface-container-lowest":"#060e20","on-surface":"#dae2fd","primary-fixed":"#7df4ff","background":"#0b1326","outline":"#849495","on-primary-container":"#006970","on-error-container":"#ffdad6","inverse-on-surface":"#283044","inverse-surface":"#dae2fd"},
+        borderRadius:{DEFAULT:"0.125rem",lg:"0.25rem",xl:"0.5rem",full:"0.75rem"},
+        spacing:{sm:"12px",gutter:"24px",margin:"32px",md:"24px",lg:"48px",base:"8px",xs:"4px","sidebar-width":"280px"},
+        fontFamily:{"headline-md":["Montserrat","sans-serif"],"label-sm":["JetBrains Mono","monospace"],"kpi-value":["Montserrat","sans-serif"],"display-lg":["Montserrat","sans-serif"],"body-md":["Montserrat","sans-serif"],"table-data":["Montserrat","sans-serif"]},
+        fontSize:{"headline-md":["24px",{lineHeight:"1.3",letterSpacing:"-0.01em",fontWeight:"600"}],"label-sm":["12px",{lineHeight:"1",letterSpacing:"0.08em",fontWeight:"500"}],"kpi-value":["28px",{lineHeight:"1",letterSpacing:"0.05em",fontWeight:"700"}],"display-lg":["48px",{lineHeight:"1.1",letterSpacing:"-0.02em",fontWeight:"700"}],"body-md":["16px",{lineHeight:"1.6",letterSpacing:"0.01em",fontWeight:"400"}],"table-data":["14px",{lineHeight:"1.4",letterSpacing:"0.03em",fontWeight:"500"}]}
+      }
+    }
+  }
+</script>
+<style>
+  .material-symbols-outlined{font-family:'Material Symbols Outlined';font-weight:normal;font-style:normal;font-size:24px;line-height:1;letter-spacing:normal;text-transform:none;display:inline-block;white-space:nowrap;direction:ltr;-webkit-font-smoothing:antialiased;}
+  .bloom-hover:hover{box-shadow:0 0 20px rgba(0,240,255,0.4);}
+  .bg-pattern{background-image:radial-gradient(circle at 2px 2px,rgba(218,226,253,0.05) 1px,transparent 0);background-size:24px 24px;}
+</style>
+</head>
+<body class="bg-background text-on-surface font-body-md min-h-screen antialiased flex overflow-hidden selection:bg-primary-container selection:text-on-primary-container">
+
+<!-- SideNavBar -->
+<nav class="fixed left-0 top-0 h-full z-40 flex flex-col bg-surface-container-lowest border-r border-outline-variant w-[280px]">
+  <div class="p-gutter border-b border-outline-variant">
+    <div class="flex items-center gap-sm mb-lg">
+      <div class="w-12 h-12 rounded-lg bg-primary-container flex items-center justify-center shrink-0">
+        <span class="material-symbols-outlined text-on-primary-container" style="font-variation-settings:'FILL' 1">inventory_2</span>
+      </div>
+      <div>
+        <h1 class="font-headline-md text-headline-md font-bold text-primary">InventoryPro</h1>
+        <p class="font-label-sm text-label-sm text-on-surface-variant uppercase mt-1">Supply Chain AI</p>
+      </div>
+    </div>
+  </div>
+  <div class="flex-1 py-gutter px-sm overflow-y-auto">
+    <ul class="space-y-base">
+      <li><a class="flex items-center gap-sm px-md py-sm rounded-lg text-on-surface-variant hover:bg-surface-container transition-colors" href="/"><span class="material-symbols-outlined">dashboard</span><span class="font-table-data text-table-data">Dashboard</span></a></li>
+      <li><a class="flex items-center gap-sm px-md py-sm rounded-lg text-on-surface-variant hover:bg-surface-container transition-colors" href="/replenishment"><span class="material-symbols-outlined">inventory_2</span><span class="font-table-data text-table-data">Replenishment</span></a></li>
+      <li><a class="flex items-center gap-sm px-md py-sm rounded-lg text-on-surface-variant hover:bg-surface-container transition-colors" href="/planning"><span class="material-symbols-outlined">analytics</span><span class="font-table-data text-table-data">Planning</span></a></li>
+    </ul>
+  </div>
+  <div class="p-sm border-t border-outline-variant">
+    <ul class="space-y-base mb-sm">
+      <li><a class="flex items-center gap-sm px-md py-sm rounded-lg text-on-surface-variant hover:bg-surface-container transition-colors" href="/about"><span class="material-symbols-outlined">info</span><span class="font-table-data text-table-data">About</span></a></li>
+      <li><a class="flex items-center gap-sm px-md py-sm rounded-lg text-primary border-l-4 border-primary bg-primary-fixed/10 font-semibold" href="/feedback"><span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1">rate_review</span><span class="font-table-data text-table-data">Feedback</span></a></li>
+    </ul>
+    <button class="w-full mt-2 py-2 border border-outline-variant rounded text-on-surface font-label-sm text-label-sm uppercase tracking-wider hover:bg-surface-container-high hover:border-primary transition-colors flex items-center justify-center gap-2">
+      <span class="material-symbols-outlined text-[18px]">add</span> New Scenario
+    </button>
+  </div>
+</nav>
+
+<!-- Main Wrapper -->
+<div class="ml-[280px] flex-1 flex flex-col h-screen w-full relative bg-pattern">
+  <!-- TopNavBar -->
+  <header class="h-[80px] fixed top-0 right-0 left-[280px] flex justify-between items-center px-margin bg-surface-dim/90 backdrop-blur-md z-30 border-b border-outline-variant">
+    <h2 class="font-headline-md text-headline-md text-on-surface font-bold tracking-tight">Inventory Optimization</h2>
+    <div class="flex items-center gap-gutter">
+      <div class="relative w-64">
+        <span class="material-symbols-outlined absolute left-sm top-1/2 -translate-y-1/2 text-on-surface-variant">search</span>
+        <input class="w-full bg-surface-container-high border-b-2 border-outline-variant focus:border-primary text-on-surface py-sm pl-10 pr-sm rounded-t-DEFAULT focus:outline-none font-table-data text-table-data placeholder:text-on-surface-variant transition-colors" placeholder="Search models, forecasts..." type="text">
+      </div>
+      <div class="flex items-center gap-sm border-l border-outline-variant pl-gutter">
+        <button class="p-xs text-on-surface-variant hover:text-primary transition-colors"><span class="material-symbols-outlined">notifications</span></button>
+        <button class="p-xs text-on-surface-variant hover:text-primary transition-colors"><span class="material-symbols-outlined">light_mode</span></button>
+        <button class="p-xs text-on-surface-variant hover:text-primary transition-colors"><span class="material-symbols-outlined">settings</span></button>
+        <div class="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center ml-sm font-bold text-on-primary-container text-sm">AD</div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Canvas -->
+  <main class="flex-1 overflow-y-auto pt-[104px] px-margin pb-margin">
+    <header class="mb-gutter flex justify-between items-end">
+      <div>
+        <h1 class="font-display-lg text-display-lg text-on-surface mb-xs">Feedback &amp; Monitoring</h1>
+        <p class="font-body-md text-on-surface-variant">Track system health, model drift, and provide critical operational feedback.</p>
+      </div>
+    </header>
+
+    <div class="grid grid-cols-1 xl:grid-cols-12 gap-gutter">
+      <!-- Monitoring Panel (col-span-8) -->
+      <section class="xl:col-span-8 bg-surface-container border border-outline-variant rounded-xl p-md flex flex-col group hover:bg-surface-container-high transition-colors">
+        <div class="flex justify-between items-center mb-md z-10 relative">
+          <div class="flex items-center gap-sm">
+            <span class="material-symbols-outlined text-primary">monitor_heart</span>
+            <h3 class="font-headline-md text-headline-md text-on-surface">Monitoring &amp; Feedback Loop</h3>
+          </div>
+          <div id="drift-badge" class="flex items-center gap-xs bg-error-container/10 px-2 py-1 rounded font-label-sm text-[10px] uppercase text-error border border-error/50">
+            <span class="material-symbols-outlined text-[14px]">warning</span> Checking…
+          </div>
+        </div>
+
+        <!-- Chart -->
+        <div class="flex-1 w-full mb-md relative rounded-lg border border-outline-variant/50 bg-surface-container-low overflow-hidden" style="height:240px">
+          <div class="absolute inset-0 bg-[linear-gradient(to_right,#3b494b_1px,transparent_1px),linear-gradient(to_bottom,#3b494b_1px,transparent_1px)] bg-[size:2rem_2rem] opacity-20 pointer-events-none"></div>
+          <canvas id="driftChart" class="relative z-10"></canvas>
+        </div>
+
+        <!-- Drift Stats -->
+        <div class="grid grid-cols-3 gap-md mb-md z-10 relative">
+          <div class="bg-surface-container-high p-sm rounded border border-outline-variant">
+            <p class="font-label-sm text-[10px] uppercase text-on-surface-variant mb-xs">Current Drift Rate</p>
+            <p class="font-kpi-value text-[24px] font-bold" id="drift-rate">—</p>
+          </div>
+          <div class="bg-surface-container-high p-sm rounded border border-outline-variant">
+            <p class="font-label-sm text-[10px] uppercase text-on-surface-variant mb-xs">Last Retrained</p>
+            <p class="font-table-data text-table-data text-on-surface" id="drift-retrained">—</p>
+          </div>
+          <div class="bg-surface-container-high p-sm rounded border border-outline-variant">
+            <p class="font-label-sm text-[10px] uppercase text-on-surface-variant mb-xs">Data Anomalies</p>
+            <p class="font-kpi-value text-[24px] text-on-surface font-bold flex items-center gap-1" id="drift-anomalies">— <span class="text-error text-[16px] material-symbols-outlined">trending_up</span></p>
+          </div>
+        </div>
+
+        <div class="mt-auto pt-sm flex justify-end z-10 relative">
+          <button onclick="triggerRetrain()" class="bg-primary-container text-on-primary-container font-label-sm text-label-sm uppercase tracking-wider px-md py-sm rounded hover:bg-primary transition-colors flex items-center gap-xs shadow-sm bloom-hover">
+            <span class="material-symbols-outlined text-[16px]">model_training</span> Trigger Retrain
+          </button>
+        </div>
+      </section>
+
+      <!-- Feedback Form (col-span-4) -->
+      <section class="xl:col-span-4 bg-surface-container border border-outline-variant rounded-xl p-md flex flex-col group hover:bg-surface-container-high transition-colors">
+        <div class="flex items-center gap-sm mb-md pb-sm border-b border-outline-variant">
+          <span class="material-symbols-outlined text-primary">rate_review</span>
+          <h3 class="font-headline-md text-headline-md text-on-surface">Submit Feedback</h3>
+        </div>
+        <form id="feedback-form" class="flex flex-col flex-1" onsubmit="submitFeedback(event)">
+          <!-- Usability Rating -->
+          <div class="mb-md">
+            <label class="block font-label-sm text-[10px] uppercase tracking-wider text-on-surface-variant mb-sm">Usability Rating</label>
+            <div class="flex justify-between items-center bg-surface-container-low border border-outline-variant rounded p-xs" id="usability-group">
+              <label class="cursor-pointer relative flex-1 text-center py-xs rounded hover:bg-surface-container-high transition-colors" onclick="selectRating('usability', 1)"><span class="rating-label font-table-data text-table-data text-on-surface">1</span></label>
+              <label class="cursor-pointer relative flex-1 text-center py-xs rounded hover:bg-surface-container-high transition-colors" onclick="selectRating('usability', 2)"><span class="rating-label font-table-data text-table-data text-on-surface">2</span></label>
+              <label class="cursor-pointer relative flex-1 text-center py-xs rounded hover:bg-surface-container-high transition-colors" onclick="selectRating('usability', 3)"><span id="u3" class="rating-label font-table-data text-table-data text-on-surface font-bold text-primary">3</span><div class="absolute inset-0 border border-primary rounded pointer-events-none"></div></label>
+              <label class="cursor-pointer relative flex-1 text-center py-xs rounded hover:bg-surface-container-high transition-colors" onclick="selectRating('usability', 4)"><span class="rating-label font-table-data text-table-data text-on-surface">4</span></label>
+              <label class="cursor-pointer relative flex-1 text-center py-xs rounded hover:bg-surface-container-high transition-colors" onclick="selectRating('usability', 5)"><span class="rating-label font-table-data text-table-data text-on-surface">5</span></label>
+            </div>
+            <div class="flex justify-between font-label-sm text-[10px] uppercase text-on-surface-variant mt-1 px-1"><span>Poor</span><span>Excellent</span></div>
+            <input type="hidden" id="usability-val" value="3">
+          </div>
+          <!-- Accuracy Rating -->
+          <div class="mb-md">
+            <label class="block font-label-sm text-[10px] uppercase tracking-wider text-on-surface-variant mb-sm">Forecast Accuracy</label>
+            <div class="flex justify-between items-center bg-surface-container-low border border-outline-variant rounded p-xs" id="accuracy-group">
+              <label class="cursor-pointer relative flex-1 text-center py-xs rounded hover:bg-surface-container-high transition-colors" onclick="selectRating('accuracy', 1)"><span class="rating-label font-table-data text-table-data text-on-surface">1</span></label>
+              <label class="cursor-pointer relative flex-1 text-center py-xs rounded hover:bg-surface-container-high transition-colors" onclick="selectRating('accuracy', 2)"><span class="rating-label font-table-data text-table-data text-on-surface">2</span></label>
+              <label class="cursor-pointer relative flex-1 text-center py-xs rounded hover:bg-surface-container-high transition-colors" onclick="selectRating('accuracy', 3)"><span class="rating-label font-table-data text-table-data text-on-surface">3</span></label>
+              <label class="cursor-pointer relative flex-1 text-center py-xs rounded hover:bg-surface-container-high transition-colors" onclick="selectRating('accuracy', 4)"><span class="rating-label font-table-data text-table-data text-on-surface">4</span></label>
+              <label class="cursor-pointer relative flex-1 text-center py-xs rounded hover:bg-surface-container-high transition-colors" onclick="selectRating('accuracy', 5)"><span id="a5" class="rating-label font-table-data text-table-data text-on-surface font-bold text-primary">5</span><div class="absolute inset-0 border border-primary rounded pointer-events-none"></div></label>
+            </div>
+            <input type="hidden" id="accuracy-val" value="5">
+          </div>
+          <!-- Comments -->
+          <div class="mb-md flex-1 flex flex-col">
+            <label class="block font-label-sm text-[10px] uppercase tracking-wider text-on-surface-variant mb-sm">Detailed Comments &amp; Context</label>
+            <textarea id="comments" class="w-full flex-1 bg-surface-container-low border-b-2 border-x-0 border-t-0 border-outline-variant rounded-t p-sm font-table-data text-table-data text-on-surface focus:border-primary focus:ring-0 focus:outline-none resize-none min-h-[120px] placeholder:text-on-surface-variant" placeholder="Describe specific instances of model inaccuracy or usability issues..."></textarea>
+          </div>
+          <div id="submit-msg" class="mb-sm text-primary font-table-data text-table-data hidden">Feedback submitted — thank you!</div>
+          <div class="mt-auto pt-sm flex gap-sm">
+            <button type="button" onclick="saveDraft()" class="flex-1 border border-outline-variant text-on-surface font-label-sm text-label-sm uppercase tracking-wider px-md py-2 rounded hover:bg-surface-container-high hover:border-primary transition-colors">Save Draft</button>
+            <button type="submit" class="flex-1 bg-primary-container text-on-primary-container font-label-sm text-label-sm uppercase tracking-wider px-md py-2 rounded hover:bg-primary transition-colors bloom-hover">Submit</button>
+          </div>
+        </form>
+      </section>
+    </div>
+  </main>
+</div>
+
+<script>
+let driftChart = null;
+const ratings = { usability: 3, accuracy: 5 };
+
+function selectRating(group, val) {
+  ratings[group] = val;
+  document.getElementById(group + '-val').value = val;
+  const container = document.getElementById(group + '-group');
+  container.querySelectorAll('label').forEach((lbl, i) => {
+    const span = lbl.querySelector('.rating-label');
+    const ring = lbl.querySelector('div');
+    const selected = (i + 1) === val;
+    if (span) { span.classList.toggle('font-bold', selected); span.classList.toggle('text-primary', selected); }
+    if (ring) ring.style.display = selected ? 'block' : 'none';
+    else if (selected) {
+      const d = document.createElement('div');
+      d.className = 'absolute inset-0 border border-primary rounded pointer-events-none';
+      lbl.appendChild(d);
+    }
+  });
+}
+
+async function loadDrift() {
+  try {
+    const r = await fetch('/api/drift');
+    const d = await r.json();
+    const isDrifting = d.is_drifting;
+    const badge = document.getElementById('drift-badge');
+    badge.innerHTML = isDrifting
+      ? '<span class="material-symbols-outlined text-[14px]">warning</span> Drift Detected'
+      : '<span class="material-symbols-outlined text-[14px]">check_circle</span> Model Stable';
+    badge.className = isDrifting
+      ? 'flex items-center gap-xs bg-error-container/10 px-2 py-1 rounded font-label-sm text-[10px] uppercase text-error border border-error/50'
+      : 'flex items-center gap-xs bg-primary-container/10 px-2 py-1 rounded font-label-sm text-[10px] uppercase text-primary border border-primary/30';
+
+    const rateEl = document.getElementById('drift-rate');
+    rateEl.textContent = d.current_drift.toFixed(2) + '%';
+    rateEl.className = 'font-kpi-value text-[24px] font-bold ' + (isDrifting ? 'text-error' : 'text-primary');
+    document.getElementById('drift-retrained').textContent = d.last_retrained;
+    document.getElementById('drift-anomalies').innerHTML = d.anomaly_count + ' <span class="text-error text-[16px] material-symbols-outlined">trending_up</span>';
+
+    const ctx = document.getElementById('driftChart').getContext('2d');
+    if (driftChart) driftChart.destroy();
+    driftChart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: d.weeks,
+        datasets: [{
+          label: 'Drift %',
+          data: d.drift_pct,
+          backgroundColor: d.drift_pct.map((v, i) => i === d.drift_pct.length - 1 ? 'rgba(255,180,171,0.9)' : 'rgba(219,252,255,0.5)'),
+          borderColor: d.drift_pct.map((v, i) => i === d.drift_pct.length - 1 ? '#ffb4ab' : '#dbfcff'),
+          borderWidth: 1,
+          borderRadius: 3,
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend:{display:false}, tooltip:{backgroundColor:'#171f33',titleColor:'#dae2fd',bodyColor:'#b9cacb',borderColor:'#3b494b',borderWidth:1,callbacks:{label:ctx=>`Drift: ${ctx.parsed.y.toFixed(2)}%`}} },
+        scales: {
+          x: { grid:{color:'rgba(59,73,75,0.3)'}, ticks:{color:'#b9cacb',font:{family:'JetBrains Mono',size:11}} },
+          y: { grid:{color:'rgba(59,73,75,0.3)'}, ticks:{color:'#b9cacb',font:{family:'JetBrains Mono',size:11},callback:v=>v+'%'}, suggestedMax:Math.max(...d.drift_pct)*1.3 }
+        }
+      }
+    });
+  } catch(e) { console.error('Drift load failed', e); }
+}
+
+async function submitFeedback(e) {
+  e.preventDefault();
+  const payload = {
+    usability: parseInt(document.getElementById('usability-val').value),
+    accuracy: parseInt(document.getElementById('accuracy-val').value),
+    comments: document.getElementById('comments').value,
+  };
+  try {
+    await fetch('/api/feedback', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) });
+    const msg = document.getElementById('submit-msg');
+    msg.classList.remove('hidden');
+    document.getElementById('comments').value = '';
+    setTimeout(() => msg.classList.add('hidden'), 4000);
+  } catch(e) { alert('Submission failed. Please try again.'); }
+}
+
+function saveDraft() {
+  localStorage.setItem('feedbackDraft', JSON.stringify({
+    usability: parseInt(document.getElementById('usability-val').value),
+    accuracy: parseInt(document.getElementById('accuracy-val').value),
+    comments: document.getElementById('comments').value,
+  }));
+  const btn = event.target;
+  btn.textContent = 'Draft Saved ✓';
+  setTimeout(() => btn.textContent = 'Save Draft', 2000);
+}
+
+function triggerRetrain() {
+  const btn = event.target.closest('button');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="material-symbols-outlined text-[16px] animate-spin">autorenew</span> Retraining…';
+  setTimeout(() => {
+    btn.disabled = false;
+    btn.innerHTML = '<span class="material-symbols-outlined text-[16px]">model_training</span> Trigger Retrain';
+    loadDrift();
+  }, 2500);
+}
+
+// Restore draft
+const draft = localStorage.getItem('feedbackDraft');
+if (draft) {
+  try {
+    const p = JSON.parse(draft);
+    document.getElementById('comments').value = p.comments || '';
+    selectRating('usability', p.usability || 3);
+    selectRating('accuracy', p.accuracy || 5);
+  } catch(e) {}
+}
+
+loadDrift();
+</script>
+</body>
+</html>

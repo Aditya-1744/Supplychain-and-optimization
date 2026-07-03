@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="breadcrumb"><span>Home</span> / <span>Dashboard</span></div>
+    <h1>Supply Chain Dashboard</h1>
+    <p>Real-time overview of the optimized multi-echelon inventory network — 50 SKUs across 5 warehouses.</p>
+  </div>
+  <div class="page-actions">
+    <button class="btn btn-primary" onclick="window.location.href='/ai-chat'">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 0 0-6.88 17.23L4 22l3-1.2A10 10 0 1 0 12 2z"/></svg>
+      Ask AI Assistant
+    </button>
+  </div>
+</div>
+
+<div class="kpi-grid" id="kpiGrid">
+  <div class="kpi-card"><div class="kpi-header"><div class="kpi-icon blue">💰</div><div class="kpi-trend up" id="kpi-total-value-change">—</div></div><div class="kpi-value" id="kpi-total-value">—</div><div class="kpi-label">Total Inventory Value</div></div>
+  <div class="kpi-card"><div class="kpi-header"><div class="kpi-icon red">⚠️</div></div><div class="kpi-value" id="kpi-stockout-risk">—</div><div class="kpi-label">Stockout Risk (SKU × Warehouse)</div></div>
+  <div class="kpi-card"><div class="kpi-header"><div class="kpi-icon emerald">✅</div></div><div class="kpi-value" id="kpi-fulfillment">—</div><div class="kpi-label">Fulfillment Rate</div></div>
+  <div class="kpi-card"><div class="kpi-header"><div class="kpi-icon purple">🎯</div></div><div class="kpi-value" id="kpi-accuracy">—</div><div class="kpi-label">Forecast Accuracy Proxy</div></div>
+  <div class="kpi-card"><div class="kpi-header"><div class="kpi-icon orange">📦</div></div><div class="kpi-value" id="kpi-holding">—</div><div class="kpi-label">Holding Cost (90d)</div></div>
+  <div class="kpi-card"><div class="kpi-header"><div class="kpi-icon blue">💡</div></div><div class="kpi-value" id="kpi-coord-saving">—</div><div class="kpi-label">Coordination Saving</div></div>
+</div>
+
+<div class="ai-panel">
+  <div class="ai-panel-header">
+    <div class="ai-badge"><div class="ai-badge-dot"></div>AI-Powered Insights</div>
+    <span style="font-size:0.8rem;color:var(--text-secondary)">Live from current policy run</span>
+  </div>
+  <div class="ai-insights-grid" id="insightsGrid">
+    <div class="empty-state">Loading insights…</div>
+  </div>
+</div>
+
+<div class="chart-grid">
+  <div class="chart-card col-8">
+    <div class="chart-header">
+      <div><div class="chart-title">Demand Forecast vs Actual</div><div class="chart-subtitle">Class-A SKUs, aggregated</div></div>
+      <div class="chart-actions" style="display:flex;gap:4px">
+        <button class="filter-chip active period-btn" data-period="7D" onclick="loadDemandChart('7D')">7D</button>
+        <button class="filter-chip period-btn" data-period="30D" onclick="loadDemandChart('30D')">30D</button>
+        <button class="filter-chip period-btn" data-period="YTD" onclick="loadDemandChart('YTD')">YTD</button>
+      </div>
+    </div>
+    <div class="chart-body tall"><canvas id="demandChart"></canvas></div>
+  </div>
+  <div class="chart-card col-4">
+    <div class="chart-header"><div><div class="chart-title">ABC Classification</div><div class="chart-subtitle">Revenue share by class</div></div></div>
+    <div class="chart-body tall"><canvas id="abcChart"></canvas></div>
+  </div>
+  <div class="chart-card col-6">
+    <div class="chart-header"><div><div class="chart-title">Cost Breakdown</div><div class="chart-subtitle">90-day holdout window</div></div></div>
+    <div class="chart-body"><canvas id="costChart"></canvas></div>
+  </div>
+  <div class="chart-card col-6">
+    <div class="chart-header"><div><div class="chart-title">Fill Rate vs Service Floor</div><div class="chart-subtitle">By ABC class</div></div></div>
+    <div class="chart-body"><canvas id="fillRateChart"></canvas></div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function fmtSeverityIcon(sev) { return sev === 'critical' ? '🚨' : sev === 'warning' ? '⚡' : '💡'; }
+function fmtSeverityBg(sev) { return sev === 'critical' ? 'var(--red-bg)' : sev === 'warning' ? 'var(--orange-bg)' : 'var(--primary-bg)'; }
+function fmtSeverityColor(sev) { return sev === 'critical' ? 'var(--red)' : sev === 'warning' ? 'var(--orange)' : 'var(--primary)'; }
+
+async function loadKPIs() {
+  try {
+    const d = await fetchJSON('/api/kpis');
+    document.getElementById('kpi-total-value').textContent = fmtCurrency(d.total_value_held);
+    document.getElementById('kpi-total-value-change').textContent = '+' + d.total_value_change + '%';
+    document.getElementById('kpi-stockout-risk').textContent = d.stockout_risk_high;
+    document.getElementById('kpi-fulfillment').textContent = d.fulfillment_rate + '%';
+    document.getElementById('kpi-accuracy').textContent = d.forecast_accuracy + '%';
+    document.getElementById('kpi-holding').textContent = fmtCurrency(d.holding_cost);
+    document.getElementById('kpi-coord-saving').textContent = d.coordination_saving_pct + '%';
+
+    createChart('fillRateChart', {
+      type: 'bar',
+      data: {
+        labels: ['Class A', 'Class B', 'Class C'],
+        datasets: [
+          { label: 'Fill Rate', data: [d.fill_rate_A, d.fill_rate_B, d.fill_rate_C], backgroundColor: getChartColors().primary, borderRadius: 6 },
+          { label: 'Service Floor', data: [d.floor_A, d.floor_B, d.floor_C], backgroundColor: getChartColors().grid, borderRadius: 6 },
+        ]
+      },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top' } },
+        scales: { y: { min: 80, max: 100, grid: { color: getChartColors().grid } }, x: { grid: { display: false } } } }
+    });
+  } catch (e) { console.error(e); }
+}
+
+async function loadInsights() {
+  const grid = document.getElementById('insightsGrid');
+  try {
+    const d = await fetchJSON('/api/alerts');
+    if (!d.alerts.length) { grid.innerHTML = '<div class="empty-state">No active alerts — network is healthy.</div>'; return; }
+    grid.innerHTML = d.alerts.slice(0, 6).map(a => `
+      <div class="ai-insight-card" onclick="window.location.href='/alerts'">
+        <div class="ai-insight-icon" style="background:${fmtSeverityBg(a.severity)};color:${fmtSeverityColor(a.severity)}">${fmtSeverityIcon(a.severity)}</div>
+        <div class="ai-insight-title">${a.title}</div>
+        <div class="ai-insight-text">${a.description}</div>
+      </div>
+    `).join('');
+  } catch (e) { grid.innerHTML = '<div class="empty-state">Failed to load insights.</div>'; }
+}
+
+async function loadDemandChart(period) {
+  document.querySelectorAll('.period-btn').forEach(b => b.classList.toggle('active', b.dataset.period === period));
+  const d = await fetchJSON('/api/demand-forecast?period=' + period);
+  const c = getChartColors();
+  createChart('demandChart', {
+    type: 'line',
+    data: { labels: d.dates, datasets: [
+      { label: 'Forecast', data: d.forecast, borderColor: c.primary, backgroundColor: c.primary + '20', fill: true, tension: 0.4, borderWidth: 3 },
+      { label: 'Actual', data: d.actual, borderColor: c.emerald, borderDash: [5, 5], fill: false, tension: 0.4, borderWidth: 3 },
+    ]},
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top' } },
+      scales: { x: { grid: { display: false } }, y: { grid: { color: c.grid } } } }
+  });
+}
+
+async function loadAbcChart() {
+  const d = await fetchJSON('/api/analytics/abc-xyz');
+  const c = getChartColors();
+  const byClass = {};
+  d.cells.forEach(cell => { byClass[cell.abc_class] = (byClass[cell.abc_class] || 0) + cell.total_revenue; });
+  createChart('abcChart', {
+    type: 'doughnut',
+    data: { labels: Object.keys(byClass).map(k => 'Class ' + k), datasets: [{ data: Object.values(byClass), backgroundColor: [c.primary, c.emerald, c.orange], borderWidth: 0 }] },
+    options: { responsive: true, maintainAspectRatio: false, cutout: '65%', plugins: { legend: { position: 'bottom' } } }
+  });
+}
+
+async function loadCostChart() {
+  const d = await fetchJSON('/api/analytics/cost-breakdown');
+  const c = getChartColors();
+  createChart('costChart', {
+    type: 'doughnut',
+    data: { labels: d.labels, datasets: [{ data: d.values, backgroundColor: [c.primary, c.emerald, c.orange, c.red], borderWidth: 0 }] },
+    options: { responsive: true, maintainAspectRatio: false, cutout: '60%', plugins: { legend: { position: 'bottom' } } }
+  });
+}
+
+window.rerenderCharts = () => { loadDemandChart(document.querySelector('.period-btn.active')?.dataset.period || '30D'); loadAbcChart(); loadCostChart(); loadKPIs(); };
+loadKPIs();
+loadInsights();
+loadDemandChart('30D');
+loadAbcChart();
+loadCostChart();
+</script>
+{% endblock %}

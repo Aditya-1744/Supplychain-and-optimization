@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Inventory Optimization - Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+<script id="tailwind-config">
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        colors: {
+          "on-surface-variant": "#b9cacb", "surface-container-low": "#131b2e",
+          "primary": "#dbfcff", "on-primary": "#00363a", "error": "#ffb4ab",
+          "surface": "#0b1326", "on-background": "#dae2fd", "surface-tint": "#00dbe9",
+          "primary-fixed-dim": "#00dbe9", "surface-dim": "#0b1326",
+          "outline-variant": "#3b494b", "on-secondary-container": "#ddcdff",
+          "surface-container": "#171f33", "surface-container-high": "#222a3d",
+          "surface-bright": "#31394d", "secondary-container": "#7000ff",
+          "secondary": "#d1bcff", "primary-container": "#00f0ff",
+          "error-container": "#93000a", "surface-variant": "#2d3449",
+          "surface-container-highest": "#2d3449", "on-error": "#690005",
+          "surface-container-lowest": "#060e20", "on-surface": "#dae2fd",
+          "primary-fixed": "#7df4ff", "background": "#0b1326",
+          "outline": "#849495", "on-primary-container": "#006970",
+          "on-error-container": "#ffdad6", "inverse-on-surface": "#283044",
+        },
+        borderRadius: { DEFAULT: "0.125rem", lg: "0.25rem", xl: "0.5rem", full: "0.75rem" },
+        spacing: { sm: "12px", gutter: "24px", margin: "32px", md: "24px", lg: "48px", base: "8px", xs: "4px", "sidebar-width": "280px" },
+        fontFamily: { "headline-md": ["Montserrat","sans-serif"], "label-sm": ["JetBrains Mono","monospace"], "kpi-value": ["Montserrat","sans-serif"], "display-lg": ["Montserrat","sans-serif"], "body-md": ["Montserrat","sans-serif"], "table-data": ["Montserrat","sans-serif"] },
+        fontSize: {
+          "headline-md": ["24px",{lineHeight:"1.3",letterSpacing:"-0.01em",fontWeight:"600"}],
+          "label-sm": ["12px",{lineHeight:"1",letterSpacing:"0.08em",fontWeight:"500"}],
+          "kpi-value": ["28px",{lineHeight:"1",letterSpacing:"0.05em",fontWeight:"700"}],
+          "display-lg": ["48px",{lineHeight:"1.1",letterSpacing:"-0.02em",fontWeight:"700"}],
+          "body-md": ["16px",{lineHeight:"1.6",letterSpacing:"0.01em",fontWeight:"400"}],
+          "table-data": ["14px",{lineHeight:"1.4",letterSpacing:"0.03em",fontWeight:"500"}]
+        }
+      }
+    }
+  }
+</script>
+<style>
+  .bg-pattern { background-image: radial-gradient(circle at 2px 2px, rgba(218,226,253,0.05) 1px, transparent 0); background-size: 24px 24px; }
+</style>
+</head>
+<body class="bg-background text-on-surface font-body-md min-h-screen antialiased flex overflow-hidden selection:bg-primary-container selection:text-on-primary-container">
+
+<!-- SideNavBar -->
+<nav class="fixed left-0 top-0 h-full z-40 flex flex-col bg-surface-container-lowest border-r border-outline-variant w-[280px]">
+  <div class="p-gutter border-b border-outline-variant">
+    <div class="flex items-center gap-sm mb-lg">
+      <div class="w-12 h-12 rounded-lg bg-primary-container flex items-center justify-center shrink-0">
+        <span class="material-symbols-outlined text-on-primary-container" style="font-variation-settings:'FILL' 1">inventory_2</span>
+      </div>
+      <div>
+        <h1 class="font-headline-md text-headline-md font-bold text-primary">InventoryPro</h1>
+        <p class="font-label-sm text-label-sm text-on-surface-variant uppercase mt-1">Supply Chain AI</p>
+      </div>
+    </div>
+  </div>
+  <div class="flex-1 py-gutter px-sm overflow-y-auto">
+    <ul class="space-y-base">
+      <li><a class="flex items-center gap-sm px-md py-sm rounded-lg text-primary border-l-4 border-primary bg-primary-fixed/10 font-semibold" href="/"><span class="material-symbols-outlined">dashboard</span><span class="font-table-data text-table-data">Dashboard</span></a></li>
+      <li><a class="flex items-center gap-sm px-md py-sm rounded-lg text-on-surface-variant hover:bg-surface-container transition-colors" href="/replenishment"><span class="material-symbols-outlined">inventory_2</span><span class="font-table-data text-table-data">Replenishment</span></a></li>
+      <li><a class="flex items-center gap-sm px-md py-sm rounded-lg text-on-surface-variant hover:bg-surface-container transition-colors" href="/planning"><span class="material-symbols-outlined">analytics</span><span class="font-table-data text-table-data">Planning</span></a></li>
+    </ul>
+  </div>
+  <div class="p-sm border-t border-outline-variant">
+    <ul class="space-y-base">
+      <li><a class="flex items-center gap-sm px-md py-sm rounded-lg text-on-surface-variant hover:bg-surface-container transition-colors" href="/about"><span class="material-symbols-outlined">info</span><span class="font-table-data text-table-data">About</span></a></li>
+      <li><a class="flex items-center gap-sm px-md py-sm rounded-lg text-on-surface-variant hover:bg-surface-container transition-colors" href="/feedback"><span class="material-symbols-outlined">rate_review</span><span class="font-table-data text-table-data">Feedback</span></a></li>
+    </ul>
+  </div>
+</nav>
+
+<!-- Main Wrapper -->
+<div class="ml-[280px] flex-1 flex flex-col h-screen w-full relative bg-pattern">
+  <!-- TopNavBar -->
+  <header class="h-[80px] fixed top-0 right-0 left-[280px] flex justify-between items-center px-margin bg-surface-dim/90 backdrop-blur-md z-30 border-b border-outline-variant">
+    <h2 class="font-headline-md text-headline-md text-on-surface font-bold tracking-tight">Inventory Optimization</h2>
+    <div class="flex items-center gap-gutter">
+      <div class="relative w-64">
+        <span class="material-symbols-outlined absolute left-sm top-1/2 -translate-y-1/2 text-on-surface-variant">search</span>
+        <input class="w-full bg-surface-container-high border-b-2 border-outline-variant focus:border-primary text-on-surface py-sm pl-10 pr-sm rounded-t-DEFAULT focus:outline-none font-table-data text-table-data placeholder:text-on-surface-variant transition-colors" placeholder="Search SKU, location..." type="text">
+      </div>
+      <div class="flex items-center gap-sm border-l border-outline-variant pl-gutter">
+        <button class="p-xs text-on-surface-variant hover:text-primary transition-colors relative group">
+          <span class="material-symbols-outlined">notifications</span>
+          <span class="absolute top-0 right-0 w-2 h-2 bg-error rounded-full"></span>
+        </button>
+        <button class="p-xs text-on-surface-variant hover:text-primary transition-colors"><span class="material-symbols-outlined">light_mode</span></button>
+        <button class="p-xs text-on-surface-variant hover:text-primary transition-colors"><span class="material-symbols-outlined">settings</span></button>
+        <div class="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center ml-sm font-bold text-on-primary-container text-sm">AD</div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="flex-1 overflow-y-auto pt-[104px] px-margin pb-margin">
+    <div class="mb-gutter flex justify-between items-end">
+      <div>
+        <p class="font-label-sm text-label-sm text-primary mb-xs tracking-wider uppercase">Overview</p>
+        <h2 class="font-display-lg text-display-lg text-on-surface">Global Network Status</h2>
+      </div>
+      <div class="flex items-center gap-sm text-on-surface-variant font-table-data text-table-data bg-surface-container-high px-sm py-xs rounded border border-outline-variant">
+        <span class="material-symbols-outlined text-[18px]">calendar_today</span>
+        Last updated: Just now
+      </div>
+    </div>
+
+    <!-- KPI Ribbon -->
+    <section class="grid grid-cols-1 md:grid-cols-4 gap-md mb-margin">
+      <!-- KPI 1: Total Value Held -->
+      <div class="bg-surface-container border border-outline-variant rounded-lg p-md relative overflow-hidden group hover:bg-surface-container-high transition-colors">
+        <div class="absolute left-0 top-0 bottom-0 w-1 bg-primary"></div>
+        <div class="flex justify-between items-start mb-sm">
+          <h3 class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Total Value Held</h3>
+          <div class="bg-primary-container/10 p-xs rounded"><span class="material-symbols-outlined text-primary text-[20px]">account_balance</span></div>
+        </div>
+        <div class="font-kpi-value text-kpi-value text-on-surface mb-xs" id="kpi-total-value">—</div>
+        <div class="flex items-center gap-xs font-table-data text-[12px] text-on-surface-variant">
+          <span class="material-symbols-outlined text-primary text-[14px]">arrow_upward</span>
+          <span class="text-primary" id="kpi-total-value-change">+2.4%</span> vs last month
+        </div>
+      </div>
+      <!-- KPI 2: Stockout Risk -->
+      <div class="bg-surface-container border border-outline-variant rounded-lg p-md relative overflow-hidden group hover:bg-surface-container-high transition-colors">
+        <div class="absolute left-0 top-0 bottom-0 w-1 bg-error"></div>
+        <div class="flex justify-between items-start mb-sm">
+          <h3 class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Stockout Risk (High)</h3>
+          <div class="bg-error-container/10 p-xs rounded"><span class="material-symbols-outlined text-error text-[20px]">warning</span></div>
+        </div>
+        <div class="font-kpi-value text-kpi-value text-on-surface mb-xs" id="kpi-stockout-risk">—</div>
+        <div class="flex items-center gap-xs font-table-data text-[12px] text-on-surface-variant">
+          <span class="material-symbols-outlined text-error text-[14px]">arrow_upward</span>
+          <span class="text-error" id="kpi-stockout-new">—</span> critical since yesterday
+        </div>
+      </div>
+      <!-- KPI 3: Fulfillment Rate -->
+      <div class="bg-surface-container border border-outline-variant rounded-lg p-md relative overflow-hidden group hover:bg-surface-container-high transition-colors">
+        <div class="absolute left-0 top-0 bottom-0 w-1 bg-secondary"></div>
+        <div class="flex justify-between items-start mb-sm">
+          <h3 class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Fulfillment Rate</h3>
+          <div class="bg-secondary-container/10 p-xs rounded"><span class="material-symbols-outlined text-secondary text-[20px]">local_shipping</span></div>
+        </div>
+        <div class="font-kpi-value text-kpi-value text-on-surface mb-xs" id="kpi-fulfillment">—</div>
+        <div class="flex items-center gap-xs font-table-data text-[12px] text-on-surface-variant">
+          <span class="material-symbols-outlined text-on-surface-variant text-[14px]">horizontal_rule</span>
+          <span id="kpi-fulfillment-change">0.0%</span> change weekly
+        </div>
+      </div>
+      <!-- KPI 4: AI Forecast Accuracy -->
+      <div class="bg-surface-container border border-outline-variant rounded-lg p-md relative overflow-hidden group hover:bg-surface-container-high transition-colors">
+        <div class="absolute left-0 top-0 bottom-0 w-1 bg-primary"></div>
+        <div class="flex justify-between items-start mb-sm">
+          <h3 class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">AI Forecast Accuracy</h3>
+          <div class="bg-primary-container/10 p-xs rounded"><span class="material-symbols-outlined text-primary text-[20px]">psychology</span></div>
+        </div>
+        <div class="font-kpi-value text-kpi-value text-on-surface mb-xs" id="kpi-accuracy">—</div>
+        <div class="flex items-center gap-xs font-table-data text-[12px] text-on-surface-variant">
+          <span class="material-symbols-outlined text-primary text-[14px]">arrow_upward</span>
+          <span class="text-primary" id="kpi-accuracy-change">+1.1%</span> model improvement
+        </div>
+      </div>
+    </section>
+
+    <!-- Main Grid -->
+    <div class="grid grid-cols-1 xl:grid-cols-3 gap-margin">
+      <!-- Chart Area -->
+      <section class="xl:col-span-2 flex flex-col gap-md">
+        <div class="bg-surface-container border border-outline-variant rounded-xl p-md flex-1 relative overflow-hidden">
+          <div class="flex justify-between items-center mb-md z-10 relative">
+            <div>
+              <h3 class="font-headline-md text-headline-md text-on-surface">Demand Forecast vs Actual</h3>
+              <p class="font-body-md text-[14px] text-on-surface-variant mt-1">Aggregated across all global distribution centers</p>
+            </div>
+            <div class="flex gap-2" id="period-btns">
+              <button onclick="loadChart('7D')" data-period="7D" class="period-btn px-3 py-1 bg-surface-container-highest rounded text-on-surface font-label-sm text-label-sm border border-outline-variant hover:border-primary transition-colors">7D</button>
+              <button onclick="loadChart('30D')" data-period="30D" class="period-btn px-3 py-1 bg-primary-fixed/20 text-primary rounded font-label-sm text-label-sm border border-primary">30D</button>
+              <button onclick="loadChart('YTD')" data-period="YTD" class="period-btn px-3 py-1 bg-surface-container-highest rounded text-on-surface font-label-sm text-label-sm border border-outline-variant hover:border-primary transition-colors">YTD</button>
+            </div>
+          </div>
+          <div class="w-full h-[400px] relative rounded-lg border border-outline-variant/50 bg-surface-container-low overflow-hidden">
+            <div class="absolute inset-0 bg-[linear-gradient(to_right,#3b494b_1px,transparent_1px),linear-gradient(to_bottom,#3b494b_1px,transparent_1px)] bg-[size:4rem_4rem] opacity-20"></div>
+            <canvas id="demandChart" class="relative z-10 p-2"></canvas>
+            <div class="absolute bottom-4 left-4 flex gap-4 bg-surface-dim/80 backdrop-blur p-2 rounded border border-outline-variant z-20">
+              <div class="flex items-center gap-2"><div class="w-3 h-3 rounded-full bg-primary"></div><span class="font-label-sm text-[10px] text-on-surface-variant uppercase">Forecast</span></div>
+              <div class="flex items-center gap-2"><div class="w-3 h-3 rounded-full bg-secondary"></div><span class="font-label-sm text-[10px] text-on-surface-variant uppercase">Actual</span></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Alerts Panel -->
+      <section class="xl:col-span-1 bg-surface-container border border-outline-variant rounded-xl p-md flex flex-col h-[520px]">
+        <div class="flex justify-between items-center mb-md pb-sm border-b border-outline-variant">
+          <div class="flex items-center gap-sm">
+            <span class="material-symbols-outlined text-error">campaign</span>
+            <h3 class="font-headline-md text-headline-md text-on-surface">Action Required</h3>
+          </div>
+          <span class="bg-error-container text-on-error-container font-label-sm text-label-sm px-2 py-1 rounded-full">3 Alerts</span>
+        </div>
+        <div class="flex-1 overflow-y-auto pr-2 space-y-sm">
+          <!-- Alert 1 -->
+          <div class="bg-surface-container-high border-l-2 border-error p-sm rounded-r-lg group hover:bg-surface-bright transition-colors cursor-pointer">
+            <div class="flex justify-between items-start mb-1">
+              <span class="font-label-sm text-[10px] bg-error-container text-on-error-container px-2 py-0.5 rounded uppercase tracking-wider">Critical</span>
+              <span class="font-table-data text-[12px] text-on-surface-variant">10m ago</span>
+            </div>
+            <h4 class="font-table-data text-table-data text-on-surface font-bold mb-1">Stockout Imminent: SKU-38</h4>
+            <p class="font-body-md text-[13px] text-on-surface-variant line-clamp-2">High-velocity item in EU-Central predicted to deplete in 48 hours. Recommend emergency air freight transfer from UK-South.</p>
+            <div class="mt-2 flex justify-end">
+              <a href="/replenishment" class="text-primary font-label-sm text-[11px] uppercase tracking-wider flex items-center gap-1 group-hover:underline">Review Transfer <span class="material-symbols-outlined text-[14px]">arrow_forward</span></a>
+            </div>
+          </div>
+          <!-- Alert 2 -->
+          <div class="bg-surface-container-high border-l-2 border-secondary p-sm rounded-r-lg group hover:bg-surface-bright transition-colors cursor-pointer">
+            <div class="flex justify-between items-start mb-1">
+              <span class="font-label-sm text-[10px] bg-secondary-container text-on-secondary-container px-2 py-0.5 rounded uppercase tracking-wider">Warning</span>
+              <span class="font-table-data text-[12px] text-on-surface-variant">1h ago</span>
+            </div>
+            <h4 class="font-table-data text-table-data text-on-surface font-bold mb-1">Supplier Delay: TechCorp Inc.</h4>
+            <p class="font-body-md text-[13px] text-on-surface-variant line-clamp-2">Inbound shipment PO-44021 delayed by 5 days due to port congestion. Affects Q3 manufacturing pipeline.</p>
+            <div class="mt-2 flex justify-end">
+              <a href="/planning" class="text-primary font-label-sm text-[11px] uppercase tracking-wider flex items-center gap-1 group-hover:underline">Simulate Impact <span class="material-symbols-outlined text-[14px]">arrow_forward</span></a>
+            </div>
+          </div>
+          <!-- Alert 3 -->
+          <div class="bg-surface-container-high border-l-2 border-primary p-sm rounded-r-lg group hover:bg-surface-bright transition-colors cursor-pointer">
+            <div class="flex justify-between items-start mb-1">
+              <span class="font-label-sm text-[10px] bg-primary-container text-on-primary-container px-2 py-0.5 rounded uppercase tracking-wider">Opportunity</span>
+              <span class="font-table-data text-[12px] text-on-surface-variant">3h ago</span>
+            </div>
+            <h4 class="font-table-data text-table-data text-on-surface font-bold mb-1">Overstock: NA-West Hub</h4>
+            <p class="font-body-md text-[13px] text-on-surface-variant line-clamp-2">Excess inventory detected for seasonal items. AI suggests promotional markdown to liquidate tied capital.</p>
+            <div class="mt-2 flex justify-end">
+              <a href="/replenishment" class="text-primary font-label-sm text-[11px] uppercase tracking-wider flex items-center gap-1 group-hover:underline">View Options <span class="material-symbols-outlined text-[14px]">arrow_forward</span></a>
+            </div>
+          </div>
+        </div>
+        <button class="w-full mt-sm py-2 border border-outline-variant rounded text-on-surface font-label-sm text-label-sm uppercase tracking-wider hover:bg-surface-container-high hover:border-primary transition-colors">
+          View All Exceptions
+        </button>
+      </section>
+    </div>
+
+    <!-- Service Level Grid -->
+    <section class="mt-margin grid grid-cols-1 md:grid-cols-3 gap-md">
+      <div class="bg-surface-container border border-outline-variant rounded-xl p-md hover:bg-surface-container-high transition-colors">
+        <div class="flex justify-between items-start mb-sm">
+          <h3 class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Class A Fill Rate</h3>
+          <span class="font-label-sm text-[10px] bg-primary-container/10 text-primary px-2 py-0.5 rounded border border-primary/30 uppercase">High Priority</span>
+        </div>
+        <div class="font-kpi-value text-kpi-value text-on-surface mb-xs" id="fill-rate-A">—</div>
+        <div class="text-[12px] text-on-surface-variant font-table-data">Floor: <span id="floor-A">98%</span></div>
+        <div class="w-full bg-surface-variant/30 rounded-full h-1.5 mt-2">
+          <div id="bar-A" class="bg-primary h-1.5 rounded-full" style="width:100%"></div>
+        </div>
+      </div>
+      <div class="bg-surface-container border border-outline-variant rounded-xl p-md hover:bg-surface-container-high transition-colors">
+        <div class="flex justify-between items-start mb-sm">
+          <h3 class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Class B Fill Rate</h3>
+          <span class="font-label-sm text-[10px] bg-secondary-container/20 text-secondary px-2 py-0.5 rounded border border-secondary/30 uppercase">Medium Priority</span>
+        </div>
+        <div class="font-kpi-value text-kpi-value text-on-surface mb-xs" id="fill-rate-B">—</div>
+        <div class="text-[12px] text-on-surface-variant font-table-data">Floor: <span id="floor-B">95%</span></div>
+        <div class="w-full bg-surface-variant/30 rounded-full h-1.5 mt-2">
+          <div id="bar-B" class="bg-secondary h-1.5 rounded-full" style="width:100%"></div>
+        </div>
+      </div>
+      <div class="bg-surface-container border border-outline-variant rounded-xl p-md hover:bg-surface-container-high transition-colors">
+        <div class="flex justify-between items-start mb-sm">
+          <h3 class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Class C Fill Rate</h3>
+          <span class="font-label-sm text-[10px] bg-outline/20 text-on-surface-variant px-2 py-0.5 rounded border border-outline/30 uppercase">Standard</span>
+        </div>
+        <div class="font-kpi-value text-kpi-value text-on-surface mb-xs" id="fill-rate-C">—</div>
+        <div class="text-[12px] text-on-surface-variant font-table-data">Floor: <span id="floor-C">90%</span></div>
+        <div class="w-full bg-surface-variant/30 rounded-full h-1.5 mt-2">
+          <div id="bar-C" class="bg-outline h-1.5 rounded-full" style="width:100%"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script>
+let demandChart = null;
+
+function fmtCurrency(val) {
+  if (val >= 1e9) return '$' + (val/1e9).toFixed(2) + 'B';
+  if (val >= 1e6) return '$' + (val/1e6).toFixed(2) + 'M';
+  if (val >= 1e3) return '$' + (val/1e3).toFixed(1) + 'K';
+  return '$' + val.toFixed(0);
+}
+
+async function loadKPIs() {
+  try {
+    const r = await fetch('/api/kpis');
+    const d = await r.json();
+    document.getElementById('kpi-total-value').textContent = fmtCurrency(d.total_value_held);
+    document.getElementById('kpi-total-value-change').textContent = '+' + d.total_value_change + '%';
+    document.getElementById('kpi-stockout-risk').textContent = d.stockout_risk_high + ' SKUs';
+    document.getElementById('kpi-stockout-new').textContent = '+' + d.stockout_risk_new_today;
+    document.getElementById('kpi-fulfillment').textContent = d.fulfillment_rate + '%';
+    document.getElementById('kpi-accuracy').textContent = d.forecast_accuracy + '%';
+    document.getElementById('fill-rate-A').textContent = d.fill_rate_A + '%';
+    document.getElementById('fill-rate-B').textContent = d.fill_rate_B + '%';
+    document.getElementById('fill-rate-C').textContent = d.fill_rate_C + '%';
+    document.getElementById('floor-A').textContent = d.floor_A + '%';
+    document.getElementById('floor-B').textContent = d.floor_B + '%';
+    document.getElementById('floor-C').textContent = d.floor_C + '%';
+    document.getElementById('bar-A').style.width = d.fill_rate_A + '%';
+    document.getElementById('bar-B').style.width = d.fill_rate_B + '%';
+    document.getElementById('bar-C').style.width = d.fill_rate_C + '%';
+  } catch(e) { console.error('KPI load failed', e); }
+}
+
+async function loadChart(period = '30D') {
+  document.querySelectorAll('.period-btn').forEach(b => {
+    b.classList.toggle('bg-primary-fixed/20', b.dataset.period === period);
+    b.classList.toggle('text-primary', b.dataset.period === period);
+    b.classList.toggle('border-primary', b.dataset.period === period);
+    b.classList.toggle('bg-surface-container-highest', b.dataset.period !== period);
+    b.classList.toggle('text-on-surface', b.dataset.period !== period);
+    b.classList.toggle('border-outline-variant', b.dataset.period !== period);
+  });
+  try {
+    const r = await fetch('/api/demand-forecast?period=' + period);
+    const d = await r.json();
+    const ctx = document.getElementById('demandChart').getContext('2d');
+    if (demandChart) demandChart.destroy();
+    demandChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: d.dates,
+        datasets: [
+          {
+            label: 'Forecast',
+            data: d.forecast,
+            borderColor: '#dbfcff',
+            backgroundColor: 'rgba(219,252,255,0.08)',
+            borderWidth: 2,
+            pointRadius: period === '7D' ? 4 : 2,
+            tension: 0.4,
+            fill: true,
+          },
+          {
+            label: 'Actual',
+            data: d.actual,
+            borderColor: '#d1bcff',
+            backgroundColor: 'rgba(209,188,255,0.06)',
+            borderWidth: 2,
+            pointRadius: period === '7D' ? 4 : 2,
+            tension: 0.4,
+            fill: true,
+            borderDash: [4, 2],
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false }, tooltip: { mode: 'index', intersect: false, backgroundColor: '#171f33', titleColor: '#dae2fd', bodyColor: '#b9cacb', borderColor: '#3b494b', borderWidth: 1 } },
+        scales: {
+          x: { grid: { color: 'rgba(59,73,75,0.3)' }, ticks: { color: '#b9cacb', font: { family: 'JetBrains Mono', size: 11 }, maxTicksLimit: 10 } },
+          y: { grid: { color: 'rgba(59,73,75,0.3)' }, ticks: { color: '#b9cacb', font: { family: 'JetBrains Mono', size: 11 } } }
+        }
+      }
+    });
+  } catch(e) { console.error('Chart load failed', e); }
+}
+
+loadKPIs();
+loadChart('30D');
+</script>
+</body>
+</html>

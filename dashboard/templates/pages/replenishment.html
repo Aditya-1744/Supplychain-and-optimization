@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block title %}Replenishment{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="breadcrumb"><a href="/">Dashboard</a> / <span>Replenishment</span></div>
+    <h1>AI Replenishment Recommendations</h1>
+    <p>SKU × warehouse pairs ranked by how much of their reorder-to-target band the mean on-hand has used up — the closer to the reorder point, the higher the priority.</p>
+  </div>
+  <div class="page-actions">
+    <button class="btn btn-secondary" onclick="loadOrders()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg>
+      Refresh
+    </button>
+  </div>
+</div>
+
+<div class="chart-grid">
+  <div class="chart-card col-8">
+    <div class="chart-header"><div><div class="chart-title">Priority Queue</div><div class="chart-subtitle">Top candidates for reorder right now</div></div>
+      <span class="status-badge info" id="orderCountBadge">— orders</span>
+    </div>
+    <div style="overflow-x:auto">
+      <table class="data-table">
+        <thead><tr><th>PO ID</th><th>SKU</th><th>Warehouse</th><th>Class</th><th style="text-align:right">Qty (EOQ)</th><th>Supplier</th><th>Priority</th></tr></thead>
+        <tbody id="ordersBody"><tr><td colspan="7" class="empty-state">Loading…</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+  <div class="chart-card col-4">
+    <div class="chart-header"><div><div class="chart-title">Safety Stock Model</div><div class="chart-subtitle">Current parameters</div></div></div>
+    <div style="background:var(--bg-tertiary);border-radius:var(--radius);padding:12px;text-align:center;font-family:monospace;font-size:1.1rem;color:var(--primary);margin-bottom:16px">
+      SS = Z × σ<sub>d</sub> × √L
+    </div>
+    <div class="flex justify-between mb-4" style="font-size:0.85rem"><span>Service Level (Z)</span><strong id="ss-z">—</strong></div>
+    <div class="flex justify-between mb-4" style="font-size:0.85rem"><span>Holding rate (annual)</span><strong id="ss-holding">—</strong></div>
+    <div class="flex justify-between mb-4" style="font-size:0.85rem"><span>Ordering cost</span><strong id="ss-ordering">—</strong></div>
+    <div class="flex justify-between" style="font-size:0.85rem"><span>Shortage penalty / unit</span><strong id="ss-shortage">—</strong></div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function loadOrders() {
+  const tbody = document.getElementById('ordersBody');
+  tbody.innerHTML = '<tr><td colspan="7" class="empty-state">Loading…</td></tr>';
+  try {
+    const d = await fetchJSON('/api/replenishment?limit=12');
+    document.getElementById('orderCountBadge').textContent = d.orders.length + ' orders';
+    if (!d.orders.length) { tbody.innerHTML = '<tr><td colspan="7" class="empty-state">No orders pending.</td></tr>'; return; }
+    tbody.innerHTML = d.orders.map(o => `
+      <tr>
+        <td style="font-weight:700;color:var(--primary)">${o.po_id}</td>
+        <td>${o.description} <span style="color:var(--text-tertiary)">(${o.sku_id})</span></td>
+        <td>${o.store_id}</td>
+        <td><span class="status-badge info">${o.abc_class}</span></td>
+        <td style="text-align:right">${fmtNumber(o.qty)}</td>
+        <td>${o.supplier}</td>
+        <td>${o.urgent ? '<span class="status-badge critical">Urgent</span>' : '<span class="status-badge healthy">Normal</span>'}</td>
+      </tr>
+    `).join('');
+  } catch (e) { tbody.innerHTML = '<tr><td colspan="7" class="empty-state">Failed to load.</td></tr>'; }
+}
+
+async function loadSSParams() {
+  const d = await fetchJSON('/api/safety-stock-params');
+  document.getElementById('ss-z').textContent = d.service_level_pct + '% (' + d.service_level_z.toFixed(3) + ')';
+  document.getElementById('ss-holding').textContent = (d.holding_rate_annual * 100).toFixed(0) + '%';
+  document.getElementById('ss-ordering').textContent = '$' + d.ordering_cost.toFixed(0);
+  document.getElementById('ss-shortage').textContent = '$' + d.shortage_penalty.toFixed(0);
+}
+
+loadOrders();
+loadSSParams();
+</script>
+{% endblock %}

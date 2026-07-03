@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}Settings{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="breadcrumb"><a href="/">Dashboard</a> / <span>Settings</span></div>
+    <h1>Settings</h1>
+    <p>Display and notification preferences for this browser.</p>
+  </div>
+</div>
+
+<div class="settings-grid">
+  <div class="settings-nav">
+    <div class="settings-nav-item active">🎨 Appearance</div>
+    <div class="settings-nav-item" onclick="window.location.href='/about'">ℹ️ About This Project</div>
+    <div class="settings-nav-item" onclick="window.location.href='/feedback'">📝 Feedback</div>
+  </div>
+
+  <div class="settings-content">
+    <div class="settings-section">
+      <h3>Appearance</h3>
+      <div class="setting-row">
+        <div class="setting-info"><h4>Dark Mode</h4><p>Switch between light and dark theme</p></div>
+        <div class="toggle-switch" id="theme-toggle-switch" onclick="toggleTheme(); syncThemeSwitch()"></div>
+      </div>
+    </div>
+    <div class="settings-section">
+      <h3>Notifications</h3>
+      <div class="setting-row">
+        <div class="setting-info"><h4>Critical Alerts</h4><p>Show a badge for stockout / supplier-risk alerts</p></div>
+        <div class="toggle-switch active" onclick="this.classList.toggle('active')"></div>
+      </div>
+      <div class="setting-row">
+        <div class="setting-info"><h4>Weekly Summary</h4><p>Not wired up — this project has no email backend</p></div>
+        <div class="toggle-switch" onclick="this.classList.toggle('active')"></div>
+      </div>
+    </div>
+    <div class="settings-section">
+      <h3>About This App</h3>
+      <p style="color:var(--text-secondary);font-size:0.9rem;line-height:1.6">
+        InventoryPro / SupplyChain AI is a capstone project dashboard. Every number in this app (KPIs, forecasts,
+        replenishment, suppliers, warehouses, procurement) is computed from the real optimization pipeline outputs
+        in <code>data/processed/</code> — see the <a href="/about" style="color:var(--primary)">About</a> page for
+        the full methodology.
+      </p>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function syncThemeSwitch() {
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  document.getElementById('theme-toggle-switch').classList.toggle('active', isDark);
+}
+syncThemeSwitch();
+</script>
+{% endblock %}

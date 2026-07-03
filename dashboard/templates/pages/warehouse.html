@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}Warehouse Management{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="breadcrumb"><a href="/">Dashboard</a> / <span>Warehouse Management</span></div>
+    <h1>Warehouse Management</h1>
+    <p>Real per-warehouse inventory levels from the (s,S) policy results, mapped onto physical capacity and daily flow.</p>
+  </div>
+</div>
+
+<div class="grid-4 mb-6" id="whKpis">
+  <div class="kpi-card"><div class="kpi-header"><div class="kpi-icon blue">🏭</div></div><div class="kpi-value" id="wh-count">—</div><div class="kpi-label">Active Warehouses</div></div>
+  <div class="kpi-card"><div class="kpi-header"><div class="kpi-icon emerald">📦</div></div><div class="kpi-value" id="wh-util">—</div><div class="kpi-label">Avg Utilization</div></div>
+  <div class="kpi-card"><div class="kpi-header"><div class="kpi-icon orange">🚚</div></div><div class="kpi-value" id="wh-out">—</div><div class="kpi-label">Outgoing Today (units)</div></div>
+  <div class="kpi-card"><div class="kpi-header"><div class="kpi-icon purple">📥</div></div><div class="kpi-value" id="wh-in">—</div><div class="kpi-label">Incoming Today (units)</div></div>
+</div>
+
+<div class="chart-grid" id="whCards"></div>
+
+<div class="chart-card mt-4">
+  <div class="chart-header"><div><div class="chart-title">Utilization by Warehouse</div><div class="chart-subtitle">Used vs capacity</div></div></div>
+  <div class="chart-body"><canvas id="whChart"></canvas></div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function statusBadge(status) { return status === 'Near Capacity' ? '<span class="status-badge warning">Near Capacity</span>' : '<span class="status-badge healthy">Operational</span>'; }
+
+async function loadWarehouses() {
+  const d = await fetchJSON('/api/warehouses');
+  const wh = d.warehouses;
+  document.getElementById('wh-count').textContent = wh.length;
+  document.getElementById('wh-util').textContent = (wh.reduce((s, w) => s + w.utilization_pct, 0) / wh.length).toFixed(1) + '%';
+  document.getElementById('wh-out').textContent = fmtNumber(wh.reduce((s, w) => s + w.outgoing_today, 0));
+  document.getElementById('wh-in').textContent = fmtNumber(wh.reduce((s, w) => s + w.incoming_today, 0));
+
+  document.getElementById('whCards').innerHTML = wh.map(w => `
+    <div class="chart-card col-6">
+      <div class="chart-header">
+        <div><div class="chart-title">${w.name}</div><div class="chart-subtitle">Capacity: ${w.utilization_pct}% utilized</div></div>
+        ${statusBadge(w.status)}
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:16px">
+        <div><div style="font-size:0.75rem;color:var(--text-tertiary)">Capacity</div><div style="font-weight:700">${fmtNumber(w.capacity_units)} u</div></div>
+        <div><div style="font-size:0.75rem;color:var(--text-tertiary)">Used</div><div style="font-weight:700">${fmtNumber(w.used_units)} u</div></div>
+        <div><div style="font-size:0.75rem;color:var(--text-tertiary)">Temp</div><div style="font-weight:700">${w.temp_c}°C</div></div>
+      </div>
+      <div class="progress-bar"><div class="progress-fill ${w.utilization_pct >= 85 ? 'warning' : ''}" style="width:${w.utilization_pct}%"></div></div>
+      <div class="flex justify-between mt-4" style="font-size:0.8rem;color:var(--text-secondary)">
+        <span>📥 ${w.incoming_today} incoming</span><span>📤 ${w.outgoing_today} outgoing</span><span>✅ ${w.fill_rate_pct}% fill rate</span>
+      </div>
+    </div>
+  `).join('');
+
+  const c = getChartColors();
+  createChart('whChart', {
+    type: 'bar',
+    data: { labels: wh.map(w => w.warehouse_id), datasets: [
+      { label: 'Used', data: wh.map(w => w.used_units), backgroundColor: c.primary, borderRadius: 6 },
+      { label: 'Capacity', data: wh.map(w => w.capacity_units), backgroundColor: c.grid, borderRadius: 6 },
+    ]},
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top' } },
+      scales: { x: { grid: { display: false } }, y: { grid: { color: c.grid } } } }
+  });
+}
+
+window.rerenderCharts = loadWarehouses;
+loadWarehouses();
+</script>
+{% endblock %}

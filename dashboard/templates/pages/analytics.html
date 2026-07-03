@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+{% block title %}Analytics{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="breadcrumb"><a href="/">Dashboard</a> / <span>Analytics</span></div>
+    <h1>Advanced Analytics</h1>
+    <p>Pareto, ABC/XYZ classification, correlation, and cost structure — all computed from the real SKU master and policy results.</p>
+  </div>
+</div>
+
+<div class="chart-grid">
+  <div class="chart-card col-6">
+    <div class="chart-header"><div><div class="chart-title">Pareto Analysis (80/20 Rule)</div><div class="chart-subtitle">Cumulative revenue share by SKU rank</div></div></div>
+    <div class="chart-body"><canvas id="paretoChart"></canvas></div>
+  </div>
+  <div class="chart-card col-6">
+    <div class="chart-header"><div><div class="chart-title">ABC × XYZ Matrix</div><div class="chart-subtitle">SKU count and revenue by class combo</div></div></div>
+    <div class="chart-body"><canvas id="abcxyzChart"></canvas></div>
+  </div>
+  <div class="chart-card col-6">
+    <div class="chart-header"><div><div class="chart-title">Multi-Echelon Pooling Curve</div><div class="chart-subtitle">Safety-stock saving vs cross-store correlation ρ</div></div></div>
+    <div class="chart-body"><canvas id="correlationChart"></canvas></div>
+  </div>
+  <div class="chart-card col-6">
+    <div class="chart-header"><div><div class="chart-title">Cost Breakdown</div><div class="chart-subtitle">Total system cost by category</div></div></div>
+    <div class="chart-body"><canvas id="costBreakdownChart"></canvas></div>
+  </div>
+  <div class="chart-card col-6">
+    <div class="chart-header"><div><div class="chart-title">Days-of-Supply Distribution</div><div class="chart-subtitle">avg_on_hand ÷ base daily demand, bucketed</div></div></div>
+    <div class="chart-body"><canvas id="agingChart"></canvas></div>
+  </div>
+  <div class="chart-card col-6">
+    <div class="chart-header"><div><div class="chart-title">Margin by ABC Class</div><div class="chart-subtitle">(price − unit cost) / price</div></div></div>
+    <div class="chart-body"><canvas id="profitChart"></canvas></div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function loadPareto() {
+  const d = await fetchJSON('/api/analytics/pareto');
+  const c = getChartColors();
+  createChart('paretoChart', {
+    type: 'bar',
+    data: { labels: d.sku_id, datasets: [
+      { label: 'Revenue', data: d.revenue, backgroundColor: c.primary, yAxisID: 'y', borderRadius: 3 },
+      { type: 'line', label: 'Cumulative %', data: d.cumulative_pct, borderColor: c.orange, tension: 0.3, borderWidth: 2, pointRadius: 0, yAxisID: 'y1' },
+    ]},
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top' } },
+      scales: { x: { grid: { display: false }, ticks: { display: false } }, y: { grid: { color: c.grid } }, y1: { position: 'right', max: 100, grid: { display: false } } } }
+  });
+}
+
+async function loadAbcXyz() {
+  const d = await fetchJSON('/api/analytics/abc-xyz');
+  const c = getChartColors();
+  const colors = { A: c.primary, B: c.emerald, C: c.orange };
+  createChart('abcxyzChart', {
+    type: 'bubble',
+    data: { datasets: Object.entries(colors).map(([cls, color]) => ({
+      label: 'Class ' + cls,
+      data: d.cells.filter(x => x.abc_class === cls).map(x => ({ x: x.mean_cv, y: x.n_skus, r: Math.sqrt(x.total_revenue) / 150 })),
+      backgroundColor: color + 'aa',
+    })) },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } },
+      scales: { x: { title: { display: true, text: 'Mean demand CV (XYZ axis)' }, grid: { color: c.grid } }, y: { title: { display: true, text: 'SKU count' }, grid: { color: c.grid } } } }
+  });
+}
+
+async function loadCorrelation() {
+  const d = await fetchJSON('/api/correlation-curve');
+  const c = getChartColors();
+  createChart('correlationChart', {
+    type: 'line',
+    data: { labels: d.rho, datasets: [
+      { label: 'Pooling saving %', data: d.saving_pct, borderColor: c.emerald, backgroundColor: c.emerald + '20', fill: true, tension: 0.3, borderWidth: 3 },
+    ]},
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false },
+      tooltip: { callbacks: { title: (items) => 'ρ = ' + items[0].label } } },
+      scales: { x: { title: { display: true, text: 'Cross-store correlation ρ' }, grid: { display: false } }, y: { title: { display: true, text: 'Saving %' }, grid: { color: c.grid } } } }
+  });
+}
+
+async function loadCostBreakdown() {
+  const d = await fetchJSON('/api/analytics/cost-breakdown');
+  const c = getChartColors();
+  createChart('costBreakdownChart', {
+    type: 'doughnut',
+    data: { labels: d.labels, datasets: [{ data: d.values, backgroundColor: [c.primary, c.emerald, c.orange, c.red], borderWidth: 0 }] },
+    options: { responsive: true, maintainAspectRatio: false, cutout: '60%', plugins: { legend: { position: 'bottom' } } }
+  });
+}
+
+async function loadAging() {
+  const d = await fetchJSON('/api/analytics/aging');
+  const c = getChartColors();
+  createChart('agingChart', {
+    type: 'bar',
+    data: { labels: d.buckets, datasets: [{ label: 'SKUs', data: d.counts, backgroundColor: [c.emerald, c.emerald, c.orange, c.orange, c.red], borderRadius: 6 }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
+      scales: { x: { grid: { display: false } }, y: { grid: { color: c.grid } } } }
+  });
+}
+
+async function loadProfit() {
+  const d = await fetchJSON('/api/analytics/profitability');
+  const c = getChartColors();
+  createChart('profitChart', {
+    type: 'bar',
+    data: { labels: d.abc_class.map(x => 'Class ' + x), datasets: [{ label: 'Margin %', data: d.margin_pct, backgroundColor: [c.primary, c.emerald, c.orange], borderRadius: 6 }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
+      scales: { x: { grid: { display: false } }, y: { grid: { color: c.grid } } } }
+  });
+}
+
+window.rerenderCharts = () => { loadPareto(); loadAbcXyz(); loadCorrelation(); loadCostBreakdown(); loadAging(); loadProfit(); };
+loadPareto(); loadAbcXyz(); loadCorrelation(); loadCostBreakdown(); loadAging(); loadProfit();
+</script>
+{% endblock %}

@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% block title %}Scenario Simulator{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="breadcrumb"><a href="/">Dashboard</a> / <span>Scenario Simulator</span></div>
+    <h1>Scenario Simulator (What-If)</h1>
+    <p>Simulate demand spikes, lead-time shifts, and supplier disruption against the real cost model — the shortage-cost scaling is the verified linear relationship from the backtest.</p>
+  </div>
+</div>
+
+<div class="simulator-grid">
+  <div class="simulator-controls">
+    <h3 style="margin-bottom:20px;font-size:1.1rem">Simulation Parameters</h3>
+    <div class="slider-group">
+      <div class="slider-header"><span class="slider-label">Lead-Time Shift (days)</span><span class="slider-value" id="lt-val">+0</span></div>
+      <input type="range" id="lt-slider" min="-10" max="30" value="0" oninput="onSlider()">
+    </div>
+    <div class="slider-group">
+      <div class="slider-header"><span class="slider-label">Demand Spike (%)</span><span class="slider-value" id="demand-val">+0%</span></div>
+      <input type="range" id="demand-slider" min="-50" max="100" value="0" oninput="onSlider()">
+    </div>
+    <div class="slider-group">
+      <div class="slider-header"><span class="slider-label">Shortage Penalty ($/unit)</span><span class="slider-value" id="penalty-val">12.0</span></div>
+      <input type="range" id="penalty-slider" min="1" max="40" value="12" oninput="onSlider()">
+    </div>
+    <div class="toggle-row">
+      <div><div style="font-weight:600;font-size:0.9rem">Supplier Disruption</div><div style="font-size:0.8rem;color:var(--text-secondary)">Simulate tier-1 supplier failure</div></div>
+      <div class="toggle-switch" id="toggle-disruption" onclick="this.classList.toggle('active'); scheduleRun()"></div>
+    </div>
+    <div class="toggle-row">
+      <div><div style="font-weight:600;font-size:0.9rem">Planned Promotion</div><div style="font-size:0.8rem;color:var(--text-secondary)">Marketing-driven demand uplift</div></div>
+      <div class="toggle-switch" id="toggle-promo" onclick="this.classList.toggle('active'); scheduleRun()"></div>
+    </div>
+    <button class="btn btn-secondary mt-4" style="width:100%;justify-content:center" onclick="resetAll()">Reset Variables</button>
+  </div>
+
+  <div>
+    <div class="grid-2 mb-4">
+      <div class="kpi-card"><div class="kpi-label">Stockout Risk</div><div class="kpi-value" id="stat-stockout" style="color:var(--red)">—</div></div>
+      <div class="kpi-card"><div class="kpi-label">Service Level</div><div class="kpi-value" id="stat-service">—</div></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-header"><div><div class="chart-title">Service Level Impact</div><div class="chart-subtitle">Baseline vs simulated, 6-week horizon</div></div></div>
+      <div class="chart-body tall"><canvas id="impactChart"></canvas></div>
+    </div>
+    <div class="grid-3 mt-4">
+      <div class="kpi-card"><div class="kpi-label">Total Cost</div><div class="kpi-value" style="font-size:1.2rem" id="cost-total">—</div></div>
+      <div class="kpi-card"><div class="kpi-label">Shortage Cost</div><div class="kpi-value" style="font-size:1.2rem;color:var(--red)" id="cost-shortage">—</div></div>
+      <div class="kpi-card"><div class="kpi-label">Holding + Ordering</div><div class="kpi-value" style="font-size:1.2rem" id="cost-hold-order">—</div></div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let debounceTimer = null;
+
+function onSlider() {
+  document.getElementById('lt-val').textContent = (document.getElementById('lt-slider').value >= 0 ? '+' : '') + document.getElementById('lt-slider').value;
+  document.getElementById('demand-val').textContent = (document.getElementById('demand-slider').value >= 0 ? '+' : '') + document.getElementById('demand-slider').value + '%';
+  document.getElementById('penalty-val').textContent = parseFloat(document.getElementById('penalty-slider').value).toFixed(1);
+  scheduleRun();
+}
+function scheduleRun() { clearTimeout(debounceTimer); debounceTimer = setTimeout(runWhatIf, 250); }
+
+async function runWhatIf() {
+  const payload = {
+    shortage_penalty: parseFloat(document.getElementById('penalty-slider').value),
+    lead_time_shift: parseInt(document.getElementById('lt-slider').value),
+    demand_spike_pct: parseInt(document.getElementById('demand-slider').value),
+    supplier_disruption: document.getElementById('toggle-disruption').classList.contains('active'),
+    planned_promotion: document.getElementById('toggle-promo').classList.contains('active'),
+  };
+  try {
+    const d = await fetchJSON('/api/what-if', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+    document.getElementById('stat-stockout').textContent = d.stockout_risk_pct + '%';
+    document.getElementById('stat-service').textContent = d.service_level_pct + '%';
+    document.getElementById('cost-total').textContent = fmtCurrency(d.total_cost);
+    document.getElementById('cost-shortage').textContent = fmtCurrency(d.shortage_cost);
+    document.getElementById('cost-hold-order').textContent = fmtCurrency(d.holding_cost + d.ordering_cost);
+
+    const c = getChartColors();
+    createChart('impactChart', {
+      type: 'line',
+      data: { labels: d.chart.weeks, datasets: [
+        { label: 'Baseline', data: d.chart.baseline, borderColor: c.text, borderDash: [4, 4], borderWidth: 2, pointRadius: 3, tension: 0.3 },
+        { label: 'Simulated', data: d.chart.simulated, borderColor: c.primary, borderWidth: 3, pointRadius: 4, tension: 0.3 },
+      ]},
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top' } },
+        scales: { x: { grid: { display: false } }, y: { min: 75, max: 100, grid: { color: c.grid }, ticks: { callback: v => v + '%' } } } }
+    });
+  } catch (e) { console.error(e); }
+}
+
+function resetAll() {
+  document.getElementById('lt-slider').value = 0;
+  document.getElementById('demand-slider').value = 0;
+  document.getElementById('penalty-slider').value = 12;
+  document.getElementById('toggle-disruption').classList.remove('active');
+  document.getElementById('toggle-promo').classList.remove('active');
+  onSlider();
+}
+
+window.rerenderCharts = runWhatIf;
+onSlider();
+</script>
+{% endblock %}

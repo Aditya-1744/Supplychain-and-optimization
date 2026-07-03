@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block title %}Supplier Management{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="breadcrumb"><a href="/">Dashboard</a> / <span>Supplier Management</span></div>
+    <h1>Supplier Management</h1>
+    <p>10 suppliers, SKUs assigned deterministically; ratings and risk derived from each supplier's real assigned-SKU demand variability, lead time, and cost tier.</p>
+  </div>
+</div>
+
+<div class="grid-4 mb-6" id="supKpis">
+  <div class="kpi-card"><div class="kpi-header"><div class="kpi-icon blue">🏢</div></div><div class="kpi-value" id="sup-count">—</div><div class="kpi-label">Active Suppliers</div></div>
+  <div class="kpi-card"><div class="kpi-header"><div class="kpi-icon emerald">⭐</div></div><div class="kpi-value" id="sup-rating">—</div><div class="kpi-label">Avg Rating</div></div>
+  <div class="kpi-card"><div class="kpi-header"><div class="kpi-icon orange">⏱️</div></div><div class="kpi-value" id="sup-lead">—</div><div class="kpi-label">Avg Lead Time</div></div>
+  <div class="kpi-card"><div class="kpi-header"><div class="kpi-icon emerald">✅</div></div><div class="kpi-value" id="sup-ontime">—</div><div class="kpi-label">Avg On-Time %</div></div>
+</div>
+
+<div class="chart-grid">
+  <div class="chart-card col-8">
+    <div class="chart-header"><div><div class="chart-title">Supplier Rating</div><div class="chart-subtitle">All suppliers</div></div></div>
+    <div class="chart-body tall"><canvas id="ratingChart"></canvas></div>
+  </div>
+  <div class="chart-card col-4">
+    <div class="chart-header"><div><div class="chart-title">Risk vs Reliability</div><div class="chart-subtitle">Bubble size = SKUs sourced</div></div></div>
+    <div class="chart-body tall"><canvas id="riskChart"></canvas></div>
+  </div>
+</div>
+
+<div class="data-table-wrapper mt-6">
+  <div class="table-header"><div class="chart-title">Supplier Directory</div></div>
+  <div style="overflow-x:auto">
+    <table class="data-table">
+      <thead><tr><th>Supplier</th><th>Rating</th><th>Lead Time</th><th>On-Time %</th><th>Reliability</th><th>Cost Index</th><th>SKUs</th><th>Risk</th></tr></thead>
+      <tbody id="supBody"><tr><td colspan="8" class="empty-state">Loading…</td></tr></tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const RISK_BADGE = { Low: 'healthy', Medium: 'warning', High: 'critical' };
+
+async function loadSuppliers() {
+  const d = await fetchJSON('/api/suppliers');
+  const s = d.suppliers;
+  document.getElementById('sup-count').textContent = d.kpis.active_suppliers;
+  document.getElementById('sup-rating').textContent = d.kpis.avg_rating;
+  document.getElementById('sup-lead').textContent = d.kpis.avg_lead_time + 'd';
+  document.getElementById('sup-ontime').textContent = d.kpis.avg_on_time_pct + '%';
+
+  document.getElementById('supBody').innerHTML = s.map(x => `
+    <tr>
+      <td><strong>${x.name}</strong><br><span style="font-size:0.75rem;color:var(--text-tertiary)">${x.category} • ${x.country}</span></td>
+      <td>★ ${x.rating}</td>
+      <td>${x.lead_time_days}d</td>
+      <td>${x.on_time_pct}%</td>
+      <td>${x.reliability_pct}%</td>
+      <td>${x.cost_index}</td>
+      <td>${x.n_skus}</td>
+      <td><span class="status-badge ${RISK_BADGE[x.risk_level]}">${x.risk_level}</span></td>
+    </tr>
+  `).join('');
+
+  const c = getChartColors();
+  createChart('ratingChart', {
+    type: 'bar',
+    data: { labels: s.map(x => x.name), datasets: [{ label: 'Rating', data: s.map(x => x.rating), backgroundColor: c.primary, borderRadius: 6 }] },
+    options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', plugins: { legend: { display: false } },
+      scales: { x: { max: 5, grid: { color: c.grid } }, y: { grid: { display: false } } } }
+  });
+
+  const riskColor = { Low: c.emerald, Medium: c.orange, High: c.red };
+  createChart('riskChart', {
+    type: 'bubble',
+    data: { datasets: [{ label: 'Suppliers', data: s.map(x => ({ x: x.reliability_pct, y: x.risk_score, r: 6 + x.n_skus })), backgroundColor: s.map(x => riskColor[x.risk_level] + 'aa') }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
+      scales: { x: { title: { display: true, text: 'Reliability %' }, grid: { color: c.grid } }, y: { title: { display: true, text: 'Risk score' }, grid: { color: c.grid } } } }
+  });
+}
+
+window.rerenderCharts = loadSuppliers;
+loadSuppliers();
+</script>
+{% endblock %}

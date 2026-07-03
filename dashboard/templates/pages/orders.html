@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}Orders{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="breadcrumb"><a href="/">Dashboard</a> / <span>Orders</span></div>
+    <h1>Orders</h1>
+    <p>Daily order-line counts from the real 3-year demand history (trailing 30 days), fulfilled against each SKU/warehouse's actual simulated fill rate.</p>
+  </div>
+</div>
+
+<div class="grid-4 mb-6" id="orderKpis">
+  <div class="kpi-card"><div class="kpi-header"><div class="kpi-icon blue">📦</div></div><div class="kpi-value" id="ord-total">—</div><div class="kpi-label">Total Order Lines (30d)</div></div>
+  <div class="kpi-card"><div class="kpi-header"><div class="kpi-icon emerald">✅</div></div><div class="kpi-value" id="ord-fulfilled">—</div><div class="kpi-label">Fulfilled</div></div>
+  <div class="kpi-card"><div class="kpi-header"><div class="kpi-icon orange">⏳</div></div><div class="kpi-value" id="ord-progress">—</div><div class="kpi-label">POs In Progress</div></div>
+  <div class="kpi-card"><div class="kpi-header"><div class="kpi-icon red">⚠️</div></div><div class="kpi-value" id="ord-delayed">—</div><div class="kpi-label">POs Awaiting Approval</div></div>
+</div>
+
+<div class="chart-card">
+  <div class="chart-header"><div><div class="chart-title">Order Fulfillment Trend</div><div class="chart-subtitle">Last 30 days, real daily demand-line counts</div></div></div>
+  <div class="chart-body tall"><canvas id="ordersChart"></canvas></div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function loadOrders() {
+  const d = await fetchJSON('/api/orders');
+  document.getElementById('ord-total').textContent = fmtNumber(d.kpis.total_orders_month);
+  document.getElementById('ord-fulfilled').textContent = fmtNumber(d.kpis.fulfilled);
+  document.getElementById('ord-progress').textContent = fmtNumber(d.kpis.in_progress);
+  document.getElementById('ord-delayed').textContent = fmtNumber(d.kpis.delayed);
+
+  const c = getChartColors();
+  createChart('ordersChart', {
+    type: 'line',
+    data: { labels: d.trend.map(t => t.date), datasets: [
+      { label: 'Orders Received', data: d.trend.map(t => t.orders_received), borderColor: c.primary, tension: 0.3, borderWidth: 3, pointRadius: 0 },
+      { label: 'Fulfilled', data: d.trend.map(t => t.fulfilled), borderColor: c.emerald, tension: 0.3, borderWidth: 3, pointRadius: 0 },
+    ]},
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top' } },
+      scales: { x: { grid: { display: false }, ticks: { maxTicksLimit: 10 } }, y: { grid: { color: c.grid } } } }
+  });
+}
+
+window.rerenderCharts = loadOrders;
+loadOrders();
+</script>
+{% endblock %}

@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}Alerts Center{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="breadcrumb"><a href="/">Dashboard</a> / <span>Alerts Center</span></div>
+    <h1>Alerts Center</h1>
+    <p>Stockout risk, supplier risk, warehouse capacity, and forecast drift — derived live from current policy and network data.</p>
+  </div>
+</div>
+
+<div class="table-filters mb-6" id="filterChips">
+  <span class="filter-chip active" data-filter="all">All Alerts</span>
+  <span class="filter-chip" data-filter="critical">Critical</span>
+  <span class="filter-chip" data-filter="warning">Warning</span>
+  <span class="filter-chip" data-filter="info">Info</span>
+</div>
+
+<div class="alert-cards" id="alertCards">
+  <div class="empty-state">Loading alerts…</div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let allAlerts = [];
+
+function renderAlerts(filter) {
+  const container = document.getElementById('alertCards');
+  const filtered = filter === 'all' ? allAlerts : allAlerts.filter(a => a.severity === filter);
+  if (!filtered.length) { container.innerHTML = '<div class="empty-state">No alerts in this category.</div>'; return; }
+  container.innerHTML = filtered.map(a => `
+    <div class="alert-card ${a.severity}">
+      <div class="alert-header">
+        <div class="alert-type ${a.severity}">${a.category}</div>
+      </div>
+      <div class="alert-title">${a.title}</div>
+      <div class="alert-desc">${a.description}</div>
+    </div>
+  `).join('');
+}
+
+async function loadAlerts() {
+  try {
+    const d = await fetchJSON('/api/alerts');
+    allAlerts = d.alerts;
+    document.querySelector('[data-filter="all"]').textContent = `All Alerts (${d.total})`;
+    document.querySelector('[data-filter="critical"]').textContent = `Critical (${d.counts.critical})`;
+    document.querySelector('[data-filter="warning"]').textContent = `Warning (${d.counts.warning})`;
+    document.querySelector('[data-filter="info"]').textContent = `Info (${d.counts.info})`;
+    renderAlerts('all');
+  } catch (e) {
+    document.getElementById('alertCards').innerHTML = '<div class="empty-state">Failed to load alerts.</div>';
+  }
+}
+
+document.getElementById('filterChips').addEventListener('click', (e) => {
+  const chip = e.target.closest('.filter-chip');
+  if (!chip) return;
+  document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+  chip.classList.add('active');
+  renderAlerts(chip.dataset.filter);
+});
+
+loadAlerts();
+</script>
+{% endblock %}

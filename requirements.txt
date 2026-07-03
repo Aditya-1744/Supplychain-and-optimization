@@ -1,0 +1,31 @@
+# --- Phase 1 (data engine) ---
+numpy>=1.26
+pandas>=2.1
+pyyaml>=6.0
+matplotlib>=3.8
+kagglehub>=0.3   # scripts/import_kaggle_data.py — only needed to regenerate data/raw/* from scratch
+
+# --- Phase 2 (EDA) ---
+scipy>=1.11
+
+# --- Phase 3 (forecasting) ---
+scikit-learn>=1.4    # Ridge (seasonal model) + GradientBoostingRegressor
+# Prophet was UNAVAILABLE in the build environment (no network access).
+# Seasonality is instead modeled via explicit Fourier regression
+# (src/models/seasonal_model.py) using scikit-learn's Ridge above.
+# If Prophet becomes available in your environment, it can be installed
+# as an optional addition without changing the rest of the pipeline:
+# prophet>=1.1
+# Croston's method is implemented from scratch (src/models/croston.py) —
+# no external dependency needed.
+
+# --- Later phases (install as you reach them) ---
+# Inventory simulation (Phase 4-5)
+# simpy>=4.1            # discrete-event replenishment simulation
+# Optimization (Phase 5)
+# pulp>=2.8             # start here (free CBC solver)
+# pyomo>=6.7            # upgrade for richer models
+# Dashboard (Phase 7)
+# streamlit>=1.33
+# Testing
+pytest>=8.0

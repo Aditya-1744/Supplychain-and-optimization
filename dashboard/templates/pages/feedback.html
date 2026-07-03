@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% block title %}Feedback{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="breadcrumb"><a href="/">Dashboard</a> / <span>Feedback</span></div>
+    <h1>Feedback & Monitoring</h1>
+    <p>Track model drift and submit feedback on forecast accuracy and dashboard usability.</p>
+  </div>
+</div>
+
+<div class="chart-grid">
+  <div class="chart-card col-8">
+    <div class="chart-header">
+      <div><div class="chart-title">Drift Monitoring</div><div class="chart-subtitle">Coordination-saving spread between backtest windows</div></div>
+      <span class="status-badge warning" id="driftBadge">Checking…</span>
+    </div>
+    <div class="chart-body"><canvas id="driftChart"></canvas></div>
+    <div class="grid-3 mt-4">
+      <div class="kpi-card"><div class="kpi-label">Current Drift Rate</div><div class="kpi-value" style="font-size:1.3rem" id="drift-rate">—</div></div>
+      <div class="kpi-card"><div class="kpi-label">Last Retrained</div><div class="kpi-value" style="font-size:1.1rem" id="drift-retrained">—</div></div>
+      <div class="kpi-card"><div class="kpi-label">Data Anomalies</div><div class="kpi-value" style="font-size:1.3rem" id="drift-anomalies">—</div></div>
+    </div>
+  </div>
+
+  <div class="chart-card col-4">
+    <div class="chart-header"><div><div class="chart-title">Submit Feedback</div></div></div>
+    <form id="feedbackForm" onsubmit="submitFeedback(event)">
+      <div class="form-group mb-4">
+        <label class="form-label">Usability Rating (1–5)</label>
+        <input type="range" id="usability" min="1" max="5" value="3" oninput="document.getElementById('usability-val').textContent=this.value">
+        <div class="flex justify-between" style="font-size:0.8rem;color:var(--text-secondary)"><span>Poor</span><span id="usability-val">3</span><span>Excellent</span></div>
+      </div>
+      <div class="form-group mb-4">
+        <label class="form-label">Forecast Accuracy (1–5)</label>
+        <input type="range" id="accuracy" min="1" max="5" value="5" oninput="document.getElementById('accuracy-val').textContent=this.value">
+        <div class="flex justify-between" style="font-size:0.8rem;color:var(--text-secondary)"><span>Poor</span><span id="accuracy-val">5</span><span>Excellent</span></div>
+      </div>
+      <div class="form-group mb-4">
+        <label class="form-label">Comments</label>
+        <textarea class="form-input" id="comments" placeholder="Describe specific instances of model inaccuracy or usability issues…"></textarea>
+      </div>
+      <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center">Submit Feedback</button>
+      <div id="submitMsg" style="display:none;margin-top:12px;color:var(--emerald);font-size:0.85rem">Feedback submitted — thank you!</div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function loadDrift() {
+  const d = await fetchJSON('/api/drift');
+  const badge = document.getElementById('driftBadge');
+  badge.textContent = d.is_drifting ? 'Drift Detected' : 'Model Stable';
+  badge.className = 'status-badge ' + (d.is_drifting ? 'critical' : 'healthy');
+  document.getElementById('drift-rate').textContent = d.current_drift.toFixed(2) + '%';
+  document.getElementById('drift-retrained').textContent = d.last_retrained;
+  document.getElementById('drift-anomalies').textContent = d.anomaly_count;
+
+  const c = getChartColors();
+  createChart('driftChart', {
+    type: 'bar',
+    data: { labels: d.weeks, datasets: [{ label: 'Drift %', data: d.drift_pct,
+      backgroundColor: d.drift_pct.map((v, i) => i === d.drift_pct.length - 1 ? c.red : c.primary + '80'), borderRadius: 4 }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
+      scales: { x: { grid: { display: false } }, y: { grid: { color: c.grid }, ticks: { callback: v => v + '%' } } } }
+  });
+}
+
+async function submitFeedback(e) {
+  e.preventDefault();
+  const payload = {
+    usability: parseInt(document.getElementById('usability').value),
+    accuracy: parseInt(document.getElementById('accuracy').value),
+    comments: document.getElementById('comments').value,
+  };
+  try {
+    await fetchJSON('/api/feedback', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+    document.getElementById('submitMsg').style.display = 'block';
+    document.getElementById('comments').value = '';
+    showToast('Feedback submitted', 'success');
+    setTimeout(() => document.getElementById('submitMsg').style.display = 'none', 4000);
+  } catch (e) { showToast('Submission failed', 'error'); }
+}
+
+window.rerenderCharts = loadDrift;
+loadDrift();
+</script>
+{% endblock %}

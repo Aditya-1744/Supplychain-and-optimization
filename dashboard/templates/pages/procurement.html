@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block title %}Procurement{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="breadcrumb"><a href="/">Dashboard</a> / <span>Procurement</span></div>
+    <h1>Procurement</h1>
+    <p>Purchase order history replayed from each SKU's real EOQ reorder cadence (EOQ ÷ daily demand = order cycle) over the trailing 45 days.</p>
+  </div>
+</div>
+
+<div class="grid-4 mb-6" id="procKpis">
+  <div class="kpi-card"><div class="kpi-header"><div class="kpi-icon blue">📋</div></div><div class="kpi-value" id="proc-pending">—</div><div class="kpi-label">Pending Approval</div></div>
+  <div class="kpi-card"><div class="kpi-header"><div class="kpi-icon emerald">✅</div></div><div class="kpi-value" id="proc-approved">—</div><div class="kpi-label">Approved / In Progress</div></div>
+  <div class="kpi-card"><div class="kpi-header"><div class="kpi-icon orange">🚚</div></div><div class="kpi-value" id="proc-transit">—</div><div class="kpi-label">In Transit</div></div>
+  <div class="kpi-card"><div class="kpi-header"><div class="kpi-icon purple">💵</div></div><div class="kpi-value" id="proc-value">—</div><div class="kpi-label">Total PO Value</div></div>
+</div>
+
+<div class="data-table-wrapper">
+  <div class="table-header">
+    <div class="table-filters" id="statusFilters">
+      <span class="filter-chip active" data-status="all">All</span>
+      <span class="filter-chip" data-status="Pending Approval">Pending Approval</span>
+      <span class="filter-chip" data-status="Approved">Approved</span>
+      <span class="filter-chip" data-status="In Transit">In Transit</span>
+      <span class="filter-chip" data-status="Delivered">Delivered</span>
+    </div>
+  </div>
+  <div style="overflow-x:auto">
+    <table class="data-table">
+      <thead><tr><th>PO ID</th><th>SKU</th><th>Warehouse</th><th>Supplier</th><th style="text-align:right">Qty</th><th style="text-align:right">Value</th><th>Order Date</th><th>Expected</th><th>Status</th></tr></thead>
+      <tbody id="poBody"><tr><td colspan="9" class="empty-state">Loading…</td></tr></tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const STATUS_BADGE = { 'Pending Approval': 'warning', 'Approved': 'info', 'In Transit': 'info', 'Delivered': 'healthy' };
+
+async function loadProcurement(status) {
+  const tbody = document.getElementById('poBody');
+  tbody.innerHTML = '<tr><td colspan="9" class="empty-state">Loading…</td></tr>';
+  try {
+    const d = await fetchJSON('/api/procurement?status=' + encodeURIComponent(status) + '&limit=150');
+    document.getElementById('proc-pending').textContent = d.kpis.pending;
+    document.getElementById('proc-approved').textContent = d.kpis.approved_this_month;
+    document.getElementById('proc-transit').textContent = d.kpis.in_transit;
+    document.getElementById('proc-value').textContent = fmtCurrency(d.kpis.total_value);
+
+    if (!d.orders.length) { tbody.innerHTML = '<tr><td colspan="9" class="empty-state">No purchase orders in this status.</td></tr>'; return; }
+    tbody.innerHTML = d.orders.map(o => `
+      <tr>
+        <td style="font-weight:700;color:var(--primary)">${o.po_id}</td>
+        <td>${o.description} <span style="color:var(--text-tertiary)">(${o.sku_id})</span></td>
+        <td>${o.store_id}</td>
+        <td>${o.supplier_name || o.supplier_id}</td>
+        <td style="text-align:right">${fmtNumber(o.qty)}</td>
+        <td style="text-align:right">${fmtCurrency(o.value)}</td>
+        <td>${o.order_date}</td>
+        <td>${o.expected_delivery}</td>
+        <td><span class="status-badge ${STATUS_BADGE[o.status]}">${o.status}</span></td>
+      </tr>
+    `).join('');
+  } catch (e) { tbody.innerHTML = '<tr><td colspan="9" class="empty-state">Failed to load.</td></tr>'; }
+}
+
+document.getElementById('statusFilters').addEventListener('click', (e) => {
+  const chip = e.target.closest('.filter-chip');
+  if (!chip) return;
+  document.querySelectorAll('#statusFilters .filter-chip').forEach(c => c.classList.remove('active'));
+  chip.classList.add('active');
+  loadProcurement(chip.dataset.status);
+});
+
+loadProcurement('all');
+</script>
+{% endblock %}

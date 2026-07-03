@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html class="light" lang="en">
+<head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Scenario Planning - InventoryPro</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+<script id="tailwind-config">
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        colors: {
+          "on-error":"#ffffff","surface-container-high":"#dfe8ff","surface":"#f9f9ff","surface-container-highest":"#d6e3ff","on-surface":"#091c35","primary-fixed":"#dae2ff","outline":"#737685","on-tertiary-container":"#d2d3d7","surface-container-low":"#f0f3ff","tertiary-container":"#595b5f","on-background":"#091c35","surface-container":"#e7eeff","primary-container":"#0052cc","on-tertiary":"#ffffff","surface-bright":"#f9f9ff","on-secondary-container":"#475a7e","secondary-container":"#bfd2fd","on-surface-variant":"#434654","surface-variant":"#d6e3ff","secondary":"#4c5e83","on-primary":"#ffffff","secondary-fixed":"#d7e2ff","on-secondary":"#ffffff","primary":"#003d9b","error":"#ba1a1a","surface-tint":"#0c56d0","error-container":"#ffdad6","background":"#f9f9ff","surface-dim":"#cadbfc","on-error-container":"#93000a","surface-container-lowest":"#ffffff","on-primary-container":"#c4d2ff","outline-variant":"#c3c6d6","inverse-surface":"#20314b","on-secondary-fixed":"#041b3c",
+        },
+        borderRadius:{ DEFAULT:"0.125rem", lg:"0.25rem", xl:"0.5rem", full:"0.75rem" },
+        spacing:{ sm:"8px", base:"4px", "sidebar-width":"240px", gutter:"16px", md:"16px", "container-padding":"24px", xl:"32px", xs:"4px", lg:"24px" },
+        fontFamily:{ "body-sm":["Inter"], "body-lg":["Inter"], "headline-md":["Inter"], "display-lg":["Inter"], "body-md":["Inter"], "mono-data":["monospace"], "headline-lg":["Inter"], "label-md":["Inter"] },
+        fontSize:{
+          "body-sm":["12px",{lineHeight:"16px",fontWeight:"400"}],
+          "body-lg":["16px",{lineHeight:"24px",fontWeight:"400"}],
+          "headline-md":["20px",{lineHeight:"28px",fontWeight:"600"}],
+          "display-lg":["36px",{lineHeight:"44px",letterSpacing:"-0.02em",fontWeight:"700"}],
+          "body-md":["14px",{lineHeight:"20px",fontWeight:"400"}],
+          "mono-data":["13px",{lineHeight:"18px",fontWeight:"500"}],
+          "headline-lg":["28px",{lineHeight:"36px",letterSpacing:"-0.01em",fontWeight:"600"}],
+          "label-md":["12px",{lineHeight:"16px",letterSpacing:"0.05em",fontWeight:"600"}]
+        }
+      }
+    }
+  }
+</script>
+<style>
+  input[type=range] { -webkit-appearance:none; width:100%; background:transparent; }
+  input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; height:16px; width:16px; border-radius:50%; background:#0052cc; cursor:pointer; margin-top:-6px; box-shadow:0 1px 3px rgba(0,0,0,0.3); }
+  input[type=range]::-webkit-slider-runnable-track { width:100%; height:4px; cursor:pointer; background:#dfe8ff; border-radius:2px; }
+  input[type=range]:focus { outline:none; }
+  .toggle-checkbox:checked { right:0; border-color:#0052cc; }
+  .toggle-checkbox:checked + .toggle-label { background-color:#0052cc; }
+</style>
+</head>
+<body class="bg-background text-on-background font-body-md h-screen overflow-hidden flex">
+
+<!-- SideNavBar -->
+<nav class="hidden md:flex bg-surface-container-lowest w-[240px] h-full border-r border-outline-variant flex-col fixed left-0 top-0 z-40">
+  <div class="p-lg border-b border-outline-variant flex items-center gap-md">
+    <div class="w-8 h-8 rounded bg-primary-container text-on-primary flex items-center justify-center font-bold text-white">IP</div>
+    <div>
+      <h1 class="font-headline-md text-headline-md font-bold text-primary">InventoryPro</h1>
+      <p class="font-body-sm text-body-sm text-on-surface-variant">Supply Chain AI</p>
+    </div>
+  </div>
+  <div class="flex-1 py-md overflow-y-auto">
+    <ul class="space-y-sm px-sm">
+      <li><a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors" href="/"><span class="material-symbols-outlined">dashboard</span><span class="font-body-md text-body-md">Dashboard</span></a></li>
+      <li><a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors" href="/replenishment"><span class="material-symbols-outlined">inventory_2</span><span class="font-body-md text-body-md">Replenishment</span></a></li>
+      <li><a class="flex items-center gap-md px-md py-sm rounded-lg text-primary border-l-4 border-primary bg-primary-fixed font-semibold" href="/planning"><span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1">analytics</span><span class="font-body-md text-body-md">Planning</span></a></li>
+      <li><a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors" href="/about"><span class="material-symbols-outlined">info</span><span class="font-body-md text-body-md">About</span></a></li>
+      <li><a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors" href="/feedback"><span class="material-symbols-outlined">rate_review</span><span class="font-body-md text-body-md">Feedback</span></a></li>
+    </ul>
+  </div>
+  <div class="p-md border-t border-outline-variant">
+    <button class="w-full bg-primary-container text-on-primary py-sm px-md rounded-lg font-label-md text-label-md flex items-center justify-center gap-sm hover:bg-primary transition-colors">
+      <span class="material-symbols-outlined text-[18px]">add</span> New Scenario
+    </button>
+  </div>
+</nav>
+
+<!-- Main Content Wrapper -->
+<div class="flex-1 flex flex-col ml-0 md:ml-[240px] min-w-0 h-full">
+  <!-- TopNavBar -->
+  <header class="bg-surface-container-lowest h-16 border-b border-outline-variant flex items-center justify-between px-lg z-30 sticky top-0">
+    <h2 class="font-headline-md text-headline-md text-on-surface hidden sm:block">Inventory Optimization</h2>
+    <div class="flex items-center gap-md flex-1 max-w-md mx-md">
+      <div class="relative w-full">
+        <span class="material-symbols-outlined absolute left-sm top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none">search</span>
+        <input class="w-full bg-surface-container border-none rounded-lg pl-xl pr-sm py-sm text-body-sm font-body-sm text-on-surface placeholder:text-on-surface-variant focus:outline-none" placeholder="Search scenarios, SKUs..." type="text">
+      </div>
+    </div>
+    <div class="flex items-center gap-md">
+      <button class="text-on-surface-variant hover:bg-surface-container-high p-sm rounded-full transition-colors"><span class="material-symbols-outlined">dark_mode</span></button>
+      <button class="text-on-surface-variant hover:bg-surface-container-high p-sm rounded-full transition-colors relative">
+        <span class="material-symbols-outlined">notifications</span>
+        <span class="absolute top-1 right-1 w-2 h-2 bg-error rounded-full"></span>
+      </button>
+      <button class="text-on-surface-variant hover:bg-surface-container-high p-sm rounded-full transition-colors"><span class="material-symbols-outlined">settings</span></button>
+      <div class="w-8 h-8 rounded-full bg-secondary-container text-on-secondary-container flex items-center justify-center font-bold text-sm cursor-pointer ml-sm">AD</div>
+    </div>
+  </header>
+
+  <!-- Main Canvas -->
+  <main class="flex-1 overflow-y-auto p-container-padding bg-surface">
+    <div class="mb-lg flex justify-between items-end">
+      <div>
+        <h2 class="font-display-lg text-display-lg text-on-background mb-xs">Scenario Planning (What-If)</h2>
+        <p class="font-body-lg text-body-lg text-on-surface-variant">Simulate supply chain disruptions and demand shifts.</p>
+      </div>
+      <div class="flex gap-md">
+        <button onclick="resetAll()" class="border border-outline text-on-surface py-sm px-md rounded-lg font-label-md text-label-md hover:bg-surface-container-high transition-colors">Reset Variables</button>
+        <button onclick="saveScenario()" class="bg-primary-container text-on-primary py-sm px-md rounded-lg font-label-md text-label-md hover:bg-primary transition-colors flex items-center gap-xs shadow-sm">
+          <span class="material-symbols-outlined text-[16px]">save</span> Save Scenario
+        </button>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-12 gap-gutter">
+      <!-- Controls Panel -->
+      <div class="col-span-12 lg:col-span-4 space-y-md">
+        <div class="bg-surface-container-lowest rounded-xl border border-outline-variant p-md shadow-sm">
+          <h3 class="font-headline-md text-headline-md text-on-surface mb-md flex items-center gap-xs">
+            <span class="material-symbols-outlined text-primary-container">tune</span> Simulation Parameters
+          </h3>
+          <div class="space-y-lg mb-xl">
+            <div>
+              <div class="flex justify-between mb-xs">
+                <label class="font-label-md text-label-md text-on-surface">Lead-Time Shifts (Days)</label>
+                <span class="font-mono-data text-mono-data text-primary-container font-semibold" id="lt-val">+14</span>
+              </div>
+              <input class="w-full" id="lt-slider" max="30" min="-10" type="range" value="14" oninput="onSlider()">
+              <div class="flex justify-between text-xs text-on-surface-variant mt-1"><span>-10 (Faster)</span><span>+30 (Delayed)</span></div>
+            </div>
+            <div>
+              <div class="flex justify-between mb-xs">
+                <label class="font-label-md text-label-md text-on-surface">Demand Spikes (%)</label>
+                <span class="font-mono-data text-mono-data text-error font-semibold" id="demand-val">+25%</span>
+              </div>
+              <input class="w-full" id="demand-slider" max="100" min="-50" type="range" value="25" oninput="onSlider()">
+              <div class="flex justify-between text-xs text-on-surface-variant mt-1"><span>-50% (Drop)</span><span>+100% (Surge)</span></div>
+            </div>
+          </div>
+          <hr class="border-outline-variant mb-md">
+          <div class="space-y-md">
+            <div class="flex items-center justify-between">
+              <div>
+                <h4 class="font-body-md text-body-md font-semibold text-on-surface">Supplier Disruption</h4>
+                <p class="font-body-sm text-body-sm text-on-surface-variant">Simulate tier-1 supplier failure</p>
+              </div>
+              <div class="relative inline-block w-10 mr-2 align-middle select-none">
+                <input checked class="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 appearance-none cursor-pointer z-10 transition-transform duration-200" id="toggle-disruption" type="checkbox" onchange="onToggle(this)">
+                <label class="toggle-label block overflow-hidden h-5 rounded-full bg-surface-container-highest cursor-pointer" for="toggle-disruption"></label>
+              </div>
+            </div>
+            <div class="flex items-center justify-between">
+              <div>
+                <h4 class="font-body-md text-body-md font-semibold text-on-surface">Planned Promotion</h4>
+                <p class="font-body-sm text-body-sm text-on-surface-variant">Q4 Marketing Campaign</p>
+              </div>
+              <div class="relative inline-block w-10 mr-2 align-middle select-none">
+                <input class="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 appearance-none cursor-pointer z-10 transition-transform duration-200" id="toggle-promo" type="checkbox" onchange="onToggle(this)">
+                <label class="toggle-label block overflow-hidden h-5 rounded-full bg-surface-container-highest cursor-pointer" for="toggle-promo"></label>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick Stats -->
+        <div class="grid grid-cols-2 gap-sm">
+          <div class="bg-surface-container-lowest border border-outline-variant p-sm rounded-lg border-t-4 border-t-error">
+            <div class="text-body-sm text-on-surface-variant mb-1">Projected Stockouts</div>
+            <div class="font-headline-lg text-headline-lg text-error" id="stat-stockout">—</div>
+            <div class="text-xs text-error flex items-center mt-1"><span class="material-symbols-outlined text-[14px]">trending_up</span> <span id="stat-stockout-delta">+4% vs baseline</span></div>
+          </div>
+          <div class="bg-surface-container-lowest border border-outline-variant p-sm rounded-lg border-t-4 border-t-primary-container">
+            <div class="text-body-sm text-on-surface-variant mb-1">Holding Cost Impact</div>
+            <div class="font-headline-lg text-headline-lg text-on-surface" id="stat-holding">—</div>
+            <div class="text-xs text-primary-container flex items-center mt-1"><span class="material-symbols-outlined text-[14px]">trending_up</span> <span id="stat-holding-pct">—</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Visualization Panel -->
+      <div class="col-span-12 lg:col-span-8 flex flex-col gap-md">
+        <div class="bg-surface-container-lowest rounded-xl border border-outline-variant p-md shadow-sm flex-1 flex flex-col min-h-[400px]">
+          <div class="flex justify-between items-center mb-md">
+            <h3 class="font-headline-md text-headline-md text-on-surface">Impact Analysis: Service Level vs Cost</h3>
+            <div class="flex gap-2">
+              <span class="flex items-center text-xs text-on-surface-variant gap-1"><div class="w-3 h-3 bg-outline rounded-sm"></div> Baseline</span>
+              <span class="flex items-center text-xs text-on-surface-variant gap-1"><div class="w-3 h-3 bg-primary-container rounded-sm"></div> Simulated</span>
+            </div>
+          </div>
+          <div class="flex-1 relative" style="min-height:300px">
+            <canvas id="impactChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Cost Breakdown Cards -->
+        <div class="grid grid-cols-3 gap-md">
+          <div class="bg-surface-container-lowest border border-outline-variant rounded-lg p-md shadow-sm">
+            <div class="text-body-sm text-on-surface-variant mb-1">Total Cost</div>
+            <div class="font-headline-lg text-headline-lg text-on-surface" id="cost-total">—</div>
+          </div>
+          <div class="bg-surface-container-lowest border border-outline-variant rounded-lg p-md shadow-sm">
+            <div class="text-body-sm text-on-surface-variant mb-1">Shortage Cost</div>
+            <div class="font-headline-lg text-headline-lg text-error" id="cost-shortage">—</div>
+          </div>
+          <div class="bg-surface-container-lowest border border-outline-variant rounded-lg p-md shadow-sm">
+            <div class="text-body-sm text-on-surface-variant mb-1">Holding + Ordering</div>
+            <div class="font-headline-lg text-headline-lg text-on-surface" id="cost-hold-order">—</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+let impactChart = null;
+let debounceTimer = null;
+
+function fmtCost(v) {
+  if (Math.abs(v) >= 1e6) return '$' + (v/1e6).toFixed(2)+'M';
+  if (Math.abs(v) >= 1e3) return '$' + (v/1e3).toFixed(1)+'K';
+  return '$' + v.toFixed(0);
+}
+function fmtSign(v) { return (v >= 0 ? '+' : '') + fmtCost(v); }
+
+function onToggle(el) {
+  const label = el.nextElementSibling;
+  if (el.checked) { el.style.right='0'; el.style.borderColor='#0052cc'; label.style.backgroundColor='#0052cc'; }
+  else { el.style.right='auto'; el.style.borderColor='#c3c6d6'; label.style.backgroundColor='#d6e3ff'; }
+  scheduleRun();
+}
+
+function onSlider() {
+  const ltVal = parseInt(document.getElementById('lt-slider').value);
+  document.getElementById('lt-val').textContent = (ltVal > 0 ? '+' : '') + ltVal;
+  const dVal = parseInt(document.getElementById('demand-slider').value);
+  document.getElementById('demand-val').textContent = (dVal > 0 ? '+' : '') + dVal + '%';
+  scheduleRun();
+}
+
+function scheduleRun() {
+  clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(runWhatIf, 300);
+}
+
+async function runWhatIf() {
+  const payload = {
+    shortage_penalty: 12.0,
+    lead_time_shift: parseInt(document.getElementById('lt-slider').value),
+    demand_spike_pct: parseInt(document.getElementById('demand-slider').value),
+    supplier_disruption: document.getElementById('toggle-disruption').checked,
+    planned_promotion: document.getElementById('toggle-promo').checked,
+  };
+  try {
+    const r = await fetch('/api/what-if', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) });
+    const d = await r.json();
+    document.getElementById('stat-stockout').textContent = d.stockout_risk_pct + '%';
+    document.getElementById('stat-stockout-delta').textContent = '+' + d.stockout_risk_pct.toFixed(1) + '% vs baseline';
+    const holdImpact = d.holding_cost_impact || 0;
+    document.getElementById('stat-holding').textContent = fmtSign(holdImpact);
+    document.getElementById('stat-holding-pct').textContent = (holdImpact >= 0 ? '+' : '') + (holdImpact / 98785 * 100).toFixed(1) + '% vs baseline';
+    document.getElementById('cost-total').textContent = fmtCost(d.total_cost);
+    document.getElementById('cost-shortage').textContent = fmtCost(d.shortage_cost);
+    document.getElementById('cost-hold-order').textContent = fmtCost(d.holding_cost + d.ordering_cost);
+    updateChart(d.chart);
+  } catch(e) { console.error('What-if failed', e); }
+}
+
+function updateChart(chart) {
+  if (!chart) return;
+  const ctx = document.getElementById('impactChart').getContext('2d');
+  if (impactChart) impactChart.destroy();
+  impactChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: chart.weeks,
+      datasets: [
+        { label:'Baseline', data:chart.baseline, borderColor:'#737685', borderDash:[4,4], borderWidth:2, pointRadius:3, tension:0.3, fill:false },
+        { label:'Simulated', data:chart.simulated, borderColor:'#0052cc', borderWidth:3, pointRadius:4, tension:0.3, fill:false },
+      ]
+    },
+    options: {
+      responsive:true, maintainAspectRatio:false,
+      plugins: { legend:{display:false}, tooltip:{ mode:'index', intersect:false, backgroundColor:'#fff', titleColor:'#091c35', bodyColor:'#434654', borderColor:'#c3c6d6', borderWidth:1 } },
+      scales: {
+        x: { grid:{color:'rgba(195,198,214,0.4)'}, ticks:{color:'#434654',font:{size:11}} },
+        y: { min:75, max:100, grid:{color:'rgba(195,198,214,0.4)'}, ticks:{color:'#434654',font:{size:11},callback:v=>v+'%'} }
+      },
+      annotation: {
+        annotations: { critical:{type:'line',yMin:85,yMax:85,borderColor:'#ba1a1a',borderDash:[2,2],borderWidth:1} }
+      }
+    }
+  });
+}
+
+function resetAll() {
+  document.getElementById('lt-slider').value = 0;
+  document.getElementById('demand-slider').value = 0;
+  document.getElementById('toggle-disruption').checked = false;
+  document.getElementById('toggle-promo').checked = false;
+  document.querySelectorAll('.toggle-checkbox').forEach(onToggle);
+  onSlider();
+}
+
+function saveScenario() {
+  const btn = event.target;
+  btn.textContent = 'Saved ✓';
+  setTimeout(() => btn.innerHTML = '<span class="material-symbols-outlined text-[16px]">save</span> Save Scenario', 2000);
+}
+
+// init toggle states
+document.querySelectorAll('.toggle-checkbox').forEach(el => onToggle(el));
+onSlider();
+</script>
+</body>
+</html>
